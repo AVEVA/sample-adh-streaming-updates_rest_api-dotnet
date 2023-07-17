@@ -13,11 +13,11 @@ namespace StreamingUpdatesRestApi
 
         public static void Main()
         {
-            Console.WriteLine("Beginnging sample DotNet application for AVEVA DataHub StreamingUpdates.");
+            Console.WriteLine("Beginning sample DotNet application for AVEVA DataHub StreamingUpdates.");
             MainAsync().GetAwaiter().GetResult();
         }
 
-        public static async Task<bool> MainAsync()
+        public static async Task MainAsync()
         {
             #region Test Data Settings
             string typeId = "Simple Sds Time Value Type";
@@ -31,6 +31,7 @@ namespace StreamingUpdatesRestApi
             try
             {
                 // Make a copy of appsettings.placeholder.json and replace credentials prior to running.
+                #region Setup
                 _configuration = new ConfigurationBuilder()
                         .SetBasePath(Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.FullName)
                         .AddJsonFile("appsettings.json")
@@ -44,11 +45,12 @@ namespace StreamingUpdatesRestApi
                 string clientSecret = _configuration["ClientSecret"];
 
                 Uri uriResource = new(resource);
+                #endregion
 
                 // Step 1
                 // Obtain authentication handler for ADH using Client-credential clients.
                 // Create Sds communication services.
-                #region step1
+                #region Step1
                 AuthenticationHandler authenticationHandler = new(uriResource, clientId, clientSecret);
                 SdsService sdsService = new(new Uri(resource), authenticationHandler);
                 ISdsMetadataService metadataService = sdsService.GetMetadataService(tenantId, namespaceId);
@@ -57,19 +59,17 @@ namespace StreamingUpdatesRestApi
 
                 using (HttpClient httpClient = new(authenticationHandler) { BaseAddress = new Uri(resource) })
                 {
-                    httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip");
-
                     // Step 2
                     // Create a simple SDS Type.
-                    #region step2
+                    #region Step2
                     SdsType type = SdsTypeBuilder.CreateSdsType<SdsSimpleType>();
                     type.Id = typeId;
                     type = await metadataService.GetOrCreateTypeAsync(type).ConfigureAwait(false);
                     #endregion
 
                     // Step 3
-                    // Create a SDS Streams and populate list of stream Ids for creating signup.
-                    #region step3
+                    // Create SDS Streams and populate list of stream Ids for creating signup.
+                    #region Step3
                     List<string> streamIdList = new List<string>();
 
                     for (int i = 0; i < numOfStreamsToCreate; i++)
@@ -90,7 +90,7 @@ namespace StreamingUpdatesRestApi
                     // STREAMING UPDATES:
                     // Step 4
                     // Create an ADH Signup against the created resources (streams).
-                    #region step4
+                    #region Step4
                     CreateSignupInput signupToCreate = new CreateSignupInput()
                     {
                         Name = signupName,
@@ -106,30 +106,48 @@ namespace StreamingUpdatesRestApi
                     CheckIfResponseWasSuccessful(response);
 
                     // Get Signup Id from HttpResponse.
-
+                    Stream? jsonStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                    Signup? signup = await JsonSerializer.DeserializeAsync<Signup>(jsonStream).ConfigureAwait(false);
+                    Console.WriteLine(signup?.Id);
                     #endregion
 
                     // Step 5
                     // Make an API request to GetSignup to activate the signup.
+                    #region Step5
+                    response = await httpClient.GetAsync(new Uri($"/api/v1-preview/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signup.Id}", UriKind.Relative)).ConfigureAwait(false);
+                    CheckIfResponseWasSuccessful(response);
 
+                    // Check signup state is active.
+                    jsonStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                    signup = await JsonSerializer.DeserializeAsync<Signup>(jsonStream).ConfigureAwait(false);
+                    Console.WriteLine(signup?.SignupState);
+                    #endregion
 
                     // Step 6
                     // Make updates to the Streams (post data to stream).
+                    #region Step6
+                    #endregion
 
                     // Step 7
-                    // Make an API request to GetUpdates and ensure that data updates are received.
+                    // Make an API request to GetUpdates and ensure that data updates are received. (Parse)
+                    #region Step7
+                    #endregion
 
                     // Step 8
-                    // Create a new SDS Stream and update Signup resources to include the new stream.
+                    // Create a new SDS Stream and make an API Request to UpdateSignupResources to add the stream to signup.
+                    #region Step8
+                    #endregion
 
                     // Step 9
-                    // Make an API request to GetSignup with new updated resources.
+                    // Make an API request to GetSignup to view signup with updated resources.
+                    #region Step9
+                    #endregion
 
                     // Step 10
-                    // Make an API request to GetUpdates and ensure that data updates received.
+                    // Make an API request to GetUpdates and ensure that data updates received. (Parse)
+                    #region Step10
+                    #endregion
                 }
-                return true;
-
             }
             catch (Exception ex)
             {
