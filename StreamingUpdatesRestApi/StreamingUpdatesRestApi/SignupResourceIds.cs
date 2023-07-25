@@ -8,8 +8,8 @@ namespace StreamingUpdatesRestApi
 {
     public class SignupResourceIds
     {
-        public List<string>? AccessibleResources { get; }
+        public IEnumerable<string> AccessibleResources { get; set; }
 
-        public List<string>? InaccessibleResources { get; }
+        public IEnumerable<string> InaccessibleResources { get; set; }
     }
 }

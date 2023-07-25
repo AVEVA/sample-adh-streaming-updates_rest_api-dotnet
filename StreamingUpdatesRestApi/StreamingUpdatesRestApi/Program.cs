@@ -124,9 +124,6 @@ namespace StreamingUpdatesRestApi
                     Console.WriteLine($"Signup {signupId} has been created and is {signup?.SignupState}.");
                     #endregion
 
-                    // Add Delay to allow signup to be activated
-                    Thread.Sleep(30000);
-
                     // Step 5
                     // Make an API request to GetSignup to activate the signup
                     #region Step5
@@ -135,7 +132,7 @@ namespace StreamingUpdatesRestApi
                     CheckIfResponseWasSuccessful(response);
 
                     // Check signup state is active.
-                    signup = JsonSerializer.Deserialize<Signup>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
+                    signup = JsonSerializer.Deserialize<Signup>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
                     Console.WriteLine($"Signup is now {signup?.SignupState}.");
 
                     // Get Bookmark for GetUpdates Request from Headers
@@ -143,15 +140,18 @@ namespace StreamingUpdatesRestApi
                     #endregion
 
                     // Step 6
-                    // Make an API request to GetSignupResources to view the signup's accessible and inaccessible resources.
+                    // Make an API request to GetSignupResources to view the signup's accessible and inaccessible resources
                     #region Step6
                     Console.WriteLine("Get Signup Resources.");
+                    Thread.Sleep(10000); // Add Delay to allow signup resources to be available
+
                     response = await httpClient.GetAsync(new Uri($"{resource}/api/v1-preview/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/resources", UriKind.Absolute)).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
-                    SignupResourceIds resources = JsonSerializer.Deserialize<SignupResourceIds>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
+                    SignupResourceIds? resources = JsonSerializer.Deserialize<SignupResourceIds>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
+
                     foreach (var resourceId in resources.AccessibleResources)
                     {
-                        Console.WriteLine($"Accessible Resource: { resourceId }");
+                        Console.WriteLine($"Accessible Resource: {resourceId}");
                     }
 
                     foreach (var resourceId in resources.InaccessibleResources)
@@ -171,9 +171,9 @@ namespace StreamingUpdatesRestApi
                     }
                     #endregion
 
-                    // 30 second delay to catch up to updates
+                    // 45 second delay to catch up to updates
                     Console.WriteLine("Waiting for updates to process.");
-                    Thread.Sleep(30000);
+                    Thread.Sleep(45000);
 
                     // Step 8
                     // Make an API request to GetUpdates and ensure that data updates are received
@@ -181,10 +181,16 @@ namespace StreamingUpdatesRestApi
                     Console.WriteLine("Get Updates.");
                     response = await httpClient.GetAsync(new Uri(getUpdates, UriKind.Absolute)).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
-                    UpdateData updates = JsonSerializer.Deserialize<UpdateData>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
-                    foreach(var data in updates.Data)
+                    DataUpdate? dataUpdate = JsonSerializer.Deserialize<DataUpdate>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
+
+                    foreach (var update in dataUpdate.data)
                     {
-                        Console.WriteLine($"Update: {data}");
+                        Console.WriteLine($"Update: {update.resourceId} {update.operation}");
+
+                        foreach (var updateEvent in update.events)
+                        {
+                            Console.WriteLine($"\tTime: {updateEvent.Time} Value: {updateEvent.Value}");
+                        }
                     }
                     #endregion
 
