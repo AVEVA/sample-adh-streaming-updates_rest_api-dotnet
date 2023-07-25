@@ -124,6 +124,8 @@ namespace StreamingUpdatesRestApi
                     Console.WriteLine($"Signup {signupId} has been created and is {signup?.SignupState}.");
                     #endregion
 
+                    Thread.Sleep(10000);
+
                     // Step 5
                     // Make an API request to GetSignup to activate the signup
                     #region Step5
@@ -171,9 +173,9 @@ namespace StreamingUpdatesRestApi
                     }
                     #endregion
 
-                    // 45 second delay to catch up to updates
+                    // 60 second delay to catch up to updates
                     Console.WriteLine("Waiting for updates to process.");
-                    Thread.Sleep(45000);
+                    Thread.Sleep(60000);
 
                     // Step 8
                     // Make an API request to GetUpdates and ensure that data updates are received

@@ -20,7 +20,7 @@ The sample will perform the following procedures:
 1. Create a SDS Stream
 1. Create an ADH Signup against the created resources (streams)
 1. Make an API request to GetSignup to activate the signup
-1. Make an API request to GetSignupResources to view accessible and inaccesible resources in the signup
+1. Make an API request to GetSignupResources to view accessible and inaccessible resources in the signup
 1. Make updates to the Streams (post data to stream)
 1. Make an API request to GetUpdates and ensure that data updates are received
 1. Create a new SDS Stream and make an API request to UpdateSignupResources to include the new stream
@@ -43,7 +43,7 @@ AVEVA Data Hub is secured by obtaining tokens from its identity endpoint. Client
 }
 ```
 
-Within the sample, there are configurable options for number of streams to create, number of streams to update, adding a community id to the http request headers, and the signup name. Note, a community id is not required to use the sample.
+Within the sample, there are configurable options for number of streams to create, number of streams to update, adding a community id to the HTTP request headers, and the signup name. Note, a community id is not required to use the sample.
 
 ## Running the sample
 
