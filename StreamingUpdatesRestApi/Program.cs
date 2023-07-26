@@ -4,7 +4,6 @@ using OSIsoft.Data.Reflection;
 using OSIsoft.Identity;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace StreamingUpdatesRestApi
 {
@@ -15,7 +14,7 @@ namespace StreamingUpdatesRestApi
 
         public static void Main()
         {
-            Console.WriteLine("Beginning sample DotNet application for AVEVA DataHub StreamingUpdates.");
+            Console.WriteLine("Beginning sample DotNet application for AVEVA DataHub StreamingUpdates");
             MainAsync().GetAwaiter().GetResult();
         }
 
@@ -37,8 +36,8 @@ namespace StreamingUpdatesRestApi
         
             // ==== Ids ====
             const string TypeId = "Simple Sds Time Value Type";
-            const string CommunityId = null;
-            string signupId = null;
+            const string CommunityId = "";
+            string signupId = "";
 
             // ==== Names ====
             const string SignupName = "signupSample";
@@ -68,7 +67,7 @@ namespace StreamingUpdatesRestApi
                 try
                 {
                     // Add Community Id to Http Request Headers if necessary
-                    if (CommunityId != null)
+                    if (!string.IsNullOrEmpty(CommunityId))
                     {
                         httpClient.DefaultRequestHeaders.Add("Community-Id", CommunityId);
                     }
@@ -124,8 +123,11 @@ namespace StreamingUpdatesRestApi
 
                     // Get Signup Id from HttpResponse
                     Signup? signup = JsonSerializer.Deserialize<Signup>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
-                    signupId = signup.Id;
-                    Console.WriteLine($"Signup {signupId} has been created and is {signup?.SignupState}");
+                    if (signup != null)
+                    {
+                        signupId = signup.Id;
+                        Console.WriteLine($"Signup {signupId} has been created and is {signup?.SignupState}");
+                    }
                     Console.WriteLine();
                     #endregion
 
@@ -144,28 +146,31 @@ namespace StreamingUpdatesRestApi
                     Console.WriteLine($"Signup is now {signup?.SignupState}");
 
                     // Get Bookmark for GetUpdates Request from Headers
-                    string getUpdates = response.Headers.TryGetValues("Get-Updates", out var values) ? values.FirstOrDefault(): null;
+                    string? getUpdates = response.Headers.TryGetValues("Get-Updates", out var values) ? values.FirstOrDefault(): null;
                     Console.WriteLine();
                     #endregion
 
                     // Step 6
                     // Make an API request to GetSignupResources to view the signup's accessible and inaccessible resources
                     #region Step6
-                    Console.WriteLine("Step 6: Get Signup Resources.");
+                    Console.WriteLine("Step 6: Get Signup Resources");
                     Thread.Sleep(10000); // Add Delay to allow signup resources to be available
 
                     response = await httpClient.GetAsync(new Uri($"{resource}/api/v1-preview/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/resources", UriKind.Absolute)).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
                     SignupResourceIds? resources = JsonSerializer.Deserialize<SignupResourceIds>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
 
-                    foreach (var resourceId in resources.AccessibleResources)
+                    if (resources != null)
                     {
-                        Console.WriteLine($"Accessible Resource: {resourceId}");
-                    }
+                        foreach (var resourceId in resources.AccessibleResources)
+                        {
+                            Console.WriteLine($"Accessible Resource: {resourceId}");
+                        }
 
-                    foreach (var resourceId in resources.InaccessibleResources)
-                    {
-                        Console.WriteLine($"Inaccessible Resource: {resourceId}");
+                        foreach (var resourceId in resources.InaccessibleResources)
+                        {
+                            Console.WriteLine($"Inaccessible Resource: {resourceId}");
+                        }
                     }
                     Console.WriteLine();
                     #endregion
@@ -177,7 +182,7 @@ namespace StreamingUpdatesRestApi
                     for (int i = 0; i < NumOfStreamsToUpdate; i++)
                     {
                         var streamId = StreamNamePrefix + i;
-                        await dataService.InsertValuesAsync(streamId, GetData());
+                        await dataService.InsertValuesAsync(streamId, GetData()).ConfigureAwait(false);
                     }
                     Console.WriteLine();
                     #endregion
@@ -190,17 +195,23 @@ namespace StreamingUpdatesRestApi
                     // Make an API request to GetUpdates and ensure that data updates are received
                     #region Step8
                     Console.WriteLine("Step 8: Get Updates");
-                    response = await httpClient.GetAsync(new Uri(getUpdates, UriKind.Absolute)).ConfigureAwait(false);
+                    if (!string.IsNullOrEmpty(getUpdates))
+                    {
+                        response = await httpClient.GetAsync(new Uri(getUpdates, UriKind.Absolute)).ConfigureAwait(false);
+                    }
                     CheckIfResponseWasSuccessful(response);
                     DataUpdate? dataUpdate = JsonSerializer.Deserialize<DataUpdate>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
 
-                    foreach (var update in dataUpdate.data)
+                    if (dataUpdate != null)
                     {
-                        Console.WriteLine($"Update: {update.resourceId} {update.operation}");
-
-                        foreach (var updateEvent in update.events)
+                        foreach (var update in dataUpdate.data)
                         {
-                            Console.WriteLine($"\tTime: {updateEvent.Time} Value: {updateEvent.Value}");
+                            Console.WriteLine($"Update: {update.resourceId} {update.operation}");
+
+                            foreach (var updateEvent in update.events)
+                            {
+                                Console.WriteLine($"\tTime: {updateEvent.Time} Value: {updateEvent.Value}");
+                            }
                         }
                     }
                     Console.WriteLine();
@@ -219,7 +230,7 @@ namespace StreamingUpdatesRestApi
 
                     newSdsStream = await metadataService.GetOrCreateStreamAsync(newSdsStream).ConfigureAwait(false);
 
-                    Console.WriteLine("Step 9: Updating Signup Resources.");
+                    Console.WriteLine("Step 9: Updating Signup Resources");
                     SignupResourcesInput signupToUpdate = new SignupResourcesInput()
                     {
                         ResourcesToAdd = new List<string>() { newSdsStream.Id },
@@ -240,14 +251,18 @@ namespace StreamingUpdatesRestApi
                     response = await httpClient.GetAsync(new Uri($"{resource}/api/v1-preview/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/resources", UriKind.Absolute)).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
                     resources = JsonSerializer.Deserialize<SignupResourceIds>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
-                    foreach (var resourceId in resources.AccessibleResources)
-                    {
-                        Console.WriteLine($"Accessible Resource: {resourceId}");
-                    }
 
-                    foreach (var resourceId in resources.InaccessibleResources)
+                    if (resources != null)
                     {
-                        Console.WriteLine($"Inaccessible Resource: {resourceId}");
+                        foreach (var resourceId in resources.AccessibleResources)
+                        {
+                            Console.WriteLine($"Accessible Resource: {resourceId}");
+                        }
+
+                        foreach (var resourceId in resources.InaccessibleResources)
+                        {
+                            Console.WriteLine($"Inaccessible Resource: {resourceId}");
+                        }
                     }
                     Console.WriteLine();
                     #endregion
@@ -263,19 +278,22 @@ namespace StreamingUpdatesRestApi
                     // Step 11
                     // Cleanup Resources
                     #region Step11
-                    Console.WriteLine("Step 11: Cleaning Up.");
-                    for (int i = 0; i < NumOfStreamsToCreate; i++)
+                    Console.WriteLine("Step 11: Cleaning Up");
+                    if (metadataService != null)
                     {
-                        Console.WriteLine($"Deleting {StreamNamePrefix + i}");
-                        RunInTryCatch(metadataService.DeleteStreamAsync, StreamNamePrefix + i);
-                    }
+                        for (int i = 0; i < NumOfStreamsToCreate; i++)
+                        {
+                            Console.WriteLine($"Deleting {StreamNamePrefix + i}");
+                            RunInTryCatch(metadataService.DeleteStreamAsync, StreamNamePrefix + i);
+                        }
 
-                    Console.WriteLine($"Deleting {NewStreamName}.");
-                    RunInTryCatch(metadataService.DeleteStreamAsync, NewStreamName);
-                    Console.WriteLine("Deleting Type.");
-                    RunInTryCatch(metadataService.DeleteTypeAsync, TypeId);
-                    Console.WriteLine($"Deleting ADH Signup with id {signupId}");
-                    RunInTryCatch(httpClient.DeleteAsync, $"{resource}/api/v1-preview/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}");
+                        Console.WriteLine($"Deleting {NewStreamName}.");
+                        RunInTryCatch(metadataService.DeleteStreamAsync, NewStreamName);
+                        Console.WriteLine("Deleting Type.");
+                        RunInTryCatch(metadataService.DeleteTypeAsync, TypeId);
+                        Console.WriteLine($"Deleting ADH Signup with id {signupId}");
+                        RunInTryCatch(httpClient.DeleteAsync, $"{resource}/api/v1-preview/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}");
+                    }
                     #endregion
                 }
             }

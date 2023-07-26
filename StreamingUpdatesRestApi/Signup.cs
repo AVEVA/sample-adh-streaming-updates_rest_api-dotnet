@@ -1,6 +1,4 @@
-﻿using OSIsoft.AccessControl;
-
-namespace StreamingUpdatesRestApi
+﻿namespace StreamingUpdatesRestApi
 {
     [Serializable]
     public class Signup

@@ -50,6 +50,7 @@ Within the sample, there are configurable options for number of streams to creat
 To run this example from the command line once the `appsettings.json` is configured, run
 
 ```shell
+cd StreamingUpdatesRestApi
 dotnet restore
 dotnet run
 ```
