@@ -23,7 +23,7 @@ namespace StreamingUpdatesRestApi
         {
             #region Setup
             _configuration = new ConfigurationBuilder()
-                    .SetBasePath(Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.FullName)
+                    .SetBasePath(Directory.GetCurrentDirectory())
                     .AddJsonFile("appsettings.json")
                     .AddJsonFile("appsettings.test.json", optional: true)
                     .Build();
@@ -54,11 +54,13 @@ namespace StreamingUpdatesRestApi
             // Obtain authentication handler for ADH using Client-credential clients
             // Create Sds communication services
             #region Step1
+            Console.WriteLine("Step 1: Obtain authentication handler and create Sds communication services");
             Uri uriResource = new(resource);
             AuthenticationHandler authenticationHandler = new(uriResource, clientId, clientSecret);
             SdsService sdsService = new(new Uri(resource), authenticationHandler);
             ISdsMetadataService metadataService = sdsService.GetMetadataService(tenantId, namespaceId);
             ISdsDataService dataService = sdsService.GetDataService(tenantId, namespaceId);
+            Console.WriteLine();
             #endregion
 
             using (HttpClient httpClient = new(authenticationHandler))
@@ -74,16 +76,17 @@ namespace StreamingUpdatesRestApi
                     // Step 2
                     // Create a simple SDS Type.
                     #region Step2
-                    Console.WriteLine("Creating a simple SDS Type");
+                    Console.WriteLine("Step 2: Creating a simple SDS Type");
                     SdsType type = SdsTypeBuilder.CreateSdsType<SdsSimpleType>();
                     type.Id = TypeId;
                     type = await metadataService.GetOrCreateTypeAsync(type).ConfigureAwait(false);
+                    Console.WriteLine();
                     #endregion
 
                     // Step 3
                     // Create SDS Streams and populate list of stream Ids for creating signup
                     #region Step3
-                    Console.WriteLine("Creating SDS Streams and populate list of stream Ids");
+                    Console.WriteLine("Step 3: Creating SDS Streams and populate list of stream Ids");
                     List<string> streamIdList = new List<string>();
 
                     for (int i = 0; i < NumOfStreamsToCreate; i++)
@@ -99,13 +102,14 @@ namespace StreamingUpdatesRestApi
                         sdsStream = await metadataService.GetOrCreateStreamAsync(sdsStream).ConfigureAwait(false);
                         streamIdList.Add(sdsStream.Id);
                     }
+                    Console.WriteLine();
                     #endregion
 
                     // STREAMING UPDATES:
                     // Step 4
                     // Create an ADH Signup against the created resources (streams)
                     #region Step4
-                    Console.WriteLine("Creating Signup");
+                    Console.WriteLine("Step 4: Creating Signup");
                     CreateSignupInput signupToCreate = new CreateSignupInput()
                     {
                         Name = SignupName,
@@ -121,30 +125,33 @@ namespace StreamingUpdatesRestApi
                     // Get Signup Id from HttpResponse
                     Signup? signup = JsonSerializer.Deserialize<Signup>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
                     signupId = signup.Id;
-                    Console.WriteLine($"Signup {signupId} has been created and is {signup?.SignupState}.");
+                    Console.WriteLine($"Signup {signupId} has been created and is {signup?.SignupState}");
+                    Console.WriteLine();
                     #endregion
 
+                    // Wait 10 seconds to allow signup to be ready to activate.
                     Thread.Sleep(10000);
 
                     // Step 5
                     // Make an API request to GetSignup to activate the signup
                     #region Step5
-                    Console.WriteLine($"Activating signup");
+                    Console.WriteLine($"Step 5: Activating signup");
                     response = await httpClient.GetAsync(new Uri($"{resource}/api/v1-preview/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}", UriKind.Absolute)).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
 
                     // Check signup state is active.
                     signup = JsonSerializer.Deserialize<Signup>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-                    Console.WriteLine($"Signup is now {signup?.SignupState}.");
+                    Console.WriteLine($"Signup is now {signup?.SignupState}");
 
                     // Get Bookmark for GetUpdates Request from Headers
                     string getUpdates = response.Headers.TryGetValues("Get-Updates", out var values) ? values.FirstOrDefault(): null;
+                    Console.WriteLine();
                     #endregion
 
                     // Step 6
                     // Make an API request to GetSignupResources to view the signup's accessible and inaccessible resources
                     #region Step6
-                    Console.WriteLine("Get Signup Resources.");
+                    Console.WriteLine("Step 6: Get Signup Resources.");
                     Thread.Sleep(10000); // Add Delay to allow signup resources to be available
 
                     response = await httpClient.GetAsync(new Uri($"{resource}/api/v1-preview/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/resources", UriKind.Absolute)).ConfigureAwait(false);
@@ -160,27 +167,29 @@ namespace StreamingUpdatesRestApi
                     {
                         Console.WriteLine($"Inaccessible Resource: {resourceId}");
                     }
+                    Console.WriteLine();
                     #endregion
 
                     // Step 7
                     // Make updates to the Streams (post data to stream)
                     #region Step7
-                    Console.WriteLine("Making updates to previously created streams.");
+                    Console.WriteLine("Step 7: Making updates to previously created streams");
                     for (int i = 0; i < NumOfStreamsToUpdate; i++)
                     {
                         var streamId = StreamNamePrefix + i;
                         await dataService.InsertValuesAsync(streamId, GetData());
                     }
+                    Console.WriteLine();
                     #endregion
 
-                    // 60 second delay to catch up to updates
-                    Console.WriteLine("Waiting for updates to process.");
-                    Thread.Sleep(60000);
+                    // 90 second delay to catch up to updates
+                    Console.WriteLine("Waiting for updates to process\n");
+                    Thread.Sleep(90000);
 
                     // Step 8
                     // Make an API request to GetUpdates and ensure that data updates are received
                     #region Step8
-                    Console.WriteLine("Get Updates.");
+                    Console.WriteLine("Step 8: Get Updates");
                     response = await httpClient.GetAsync(new Uri(getUpdates, UriKind.Absolute)).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
                     DataUpdate? dataUpdate = JsonSerializer.Deserialize<DataUpdate>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
@@ -194,6 +203,7 @@ namespace StreamingUpdatesRestApi
                             Console.WriteLine($"\tTime: {updateEvent.Time} Value: {updateEvent.Value}");
                         }
                     }
+                    Console.WriteLine();
                     #endregion
 
                     // Step 9
@@ -209,7 +219,7 @@ namespace StreamingUpdatesRestApi
 
                     newSdsStream = await metadataService.GetOrCreateStreamAsync(newSdsStream).ConfigureAwait(false);
 
-                    Console.WriteLine("Updating Signup Resources.");
+                    Console.WriteLine("Step 9: Updating Signup Resources.");
                     SignupResourcesInput signupToUpdate = new SignupResourcesInput()
                     {
                         ResourcesToAdd = new List<string>() { newSdsStream.Id },
@@ -220,15 +230,13 @@ namespace StreamingUpdatesRestApi
                     signupToUpdateString.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                     response = await httpClient.PostAsync(new Uri($"{resource}/api/v1-preview/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/resources", UriKind.Absolute), signupToUpdateString).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
+                    Console.WriteLine();
                     #endregion
-
-                    // Add Delay if new resource isn't shown
-                    // Thread.Sleep(30000);
 
                     // Step 10
                     // Make an API request to GetSignupResources to view signup with updated resources
                     #region Step10
-                    Console.WriteLine("Get Signup Resources.");
+                    Console.WriteLine("Step 10: Get Signup Resources");
                     response = await httpClient.GetAsync(new Uri($"{resource}/api/v1-preview/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/resources", UriKind.Absolute)).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
                     resources = JsonSerializer.Deserialize<SignupResourceIds>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
@@ -241,6 +249,7 @@ namespace StreamingUpdatesRestApi
                     {
                         Console.WriteLine($"Inaccessible Resource: {resourceId}");
                     }
+                    Console.WriteLine();
                     #endregion
                 }
                 catch (Exception ex)
@@ -254,7 +263,7 @@ namespace StreamingUpdatesRestApi
                     // Step 11
                     // Cleanup Resources
                     #region Step11
-                    Console.WriteLine("Cleaning Up.");
+                    Console.WriteLine("Step 11: Cleaning Up.");
                     for (int i = 0; i < NumOfStreamsToCreate; i++)
                     {
                         Console.WriteLine($"Deleting {StreamNamePrefix + i}");
