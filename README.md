@@ -69,6 +69,6 @@ dotnet test
 ---
 
 Tested against DotNet 6.0.  
-For the ADH Signups samples page [ReadMe]()  
+For the ADH Streaming Updates samples page [ReadMe]()  
 For the main ADH samples page [ReadMe](https://github.com/osisoft/OSI-Samples-OCS)  
 For the main AVEVA samples page [ReadMe](https://github.com/osisoft/OSI-Samples)
