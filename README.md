@@ -4,7 +4,7 @@
 Developed against DotNet 6.0
 
 ## Requirements
-The .NET Core CLI is referenced in this sample and should be installed in order to run the sample from command line.
+The [.NET Core CLI](https://docs.microsoft.com/en-us/dotnet/core/tools/) is referenced in this sample, and should be installed to run the sample from the command line.
 
 ## Definitions
 * ADH: AVEVA DataHub
@@ -29,9 +29,9 @@ The sample will perform the following procedures:
 
 ## Configuring the sample
 
-The sample is configured using the file appsettings.placeholder.json.  Before editing, rename this file to appsettings.json. This repository's .gitignore rules should prevent the file from ever being checked in to any fork or branch, to ensure credentials are not compromised. 
+The sample is configured using the file appsettings.placeholder.json.  Before editing, rename this file to `appsettings.json`. This repository's `.gitignore` rules should prevent the file from ever being checked in to any fork or branch, to ensure credentials are not compromised. 
 
-AVEVA Data Hub is secured by obtaining tokens from its identity endpoint. Client credentials clients provide a client application identifier and an associated secret (or key) that are authenticated against the token endpoint. You must replace the placeholders in your appsettings.json file with the authentication-related values from your tenant and a client-credentials client created in your ADH tenant.
+AVEVA Data Hub is secured by obtaining tokens from its identity endpoint. Client credentials clients provide a client application identifier and an associated secret (or key) that are authenticated against the token endpoint. You must replace the placeholders in your `appsettings.json` file with the authentication-related values from your tenant and a client-credentials client created in your ADH tenant.
 
 ```json
 {
@@ -43,7 +43,7 @@ AVEVA Data Hub is secured by obtaining tokens from its identity endpoint. Client
 }
 ```
 
-Within the sample, there are configurable options for number of streams to create, number of streams to update, adding a community id to the HTTP request headers, and the signup name. Note, a community id is not required to use the sample.
+Within the sample, there are configurable options for number of streams to create, number of streams to update, adding a community id to the HTTP request headers, and the signup name. Note, a community id or changing the configurable options is not required to use the sample.
 
 ## Running the sample
 
@@ -55,3 +55,20 @@ dotnet restore
 dotnet run
 ```
 ---
+
+## Running the automated test
+
+To test the sample, run
+
+```shell
+cd StreamingUpdatesRestApiTest
+dotnet restore
+dotnet test
+```
+
+---
+
+Tested against DotNet 6.0.  
+For the ADH Signups samples page [ReadMe]()  
+For the main ADH samples page [ReadMe](https://github.com/osisoft/OSI-Samples-OCS)  
+For the main AVEVA samples page [ReadMe](https://github.com/osisoft/OSI-Samples)

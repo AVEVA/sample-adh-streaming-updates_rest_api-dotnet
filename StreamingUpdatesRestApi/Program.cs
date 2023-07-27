@@ -46,7 +46,7 @@ namespace StreamingUpdatesRestApi
             const string StreamNamePrefix = "stream_";
             const string NewStreamName = "newStream";
 
-            // Change this to desired number of streams to create and update.
+            // === Change this to desired number of streams to create and update ===
             const int NumOfStreamsToCreate = 3;
             const int NumOfStreamsToUpdate = 3;
             #endregion
