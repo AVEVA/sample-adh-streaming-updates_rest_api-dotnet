@@ -22,4 +22,10 @@
     <PackageReference Include="OSIsoft.OCSClients" Version="6.2.0-prerelease-20230530.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

@@ -1,14 +1,13 @@
-﻿using StreamingUpdatesRestApi;
-using Xunit;
+﻿using Xunit;
 
 namespace StreamingUpdatesRestApiTest
 {
     public class UnitTests
     {
         [Fact]
-        public void AssetsRestApiUnitTest()
+        public void StreamingUpdatesRestApiUnitTest()
         {
-            Assert.True(Program.MainAsync(true).Result);
+            Assert.True(StreamingUpdatesRestApi.Program.MainAsync(true).Result);
         }
     }
 }

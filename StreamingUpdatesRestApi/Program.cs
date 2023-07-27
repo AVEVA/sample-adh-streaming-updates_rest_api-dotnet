@@ -33,7 +33,9 @@ namespace StreamingUpdatesRestApi
             string resource = _configuration["Resource"];
             string clientId = _configuration["ClientId"];
             string clientSecret = _configuration["ClientSecret"];
-        
+
+            (_configuration as ConfigurationRoot).Dispose();
+
             // ==== Ids ====
             const string TypeId = "Simple Sds Time Value Type";
             const string CommunityId = "";

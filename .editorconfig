@@ -1094,3 +1094,6 @@ dotnet_diagnostic.CS8618.severity = none
 
 # VSSpell001: Spell Check
 dotnet_diagnostic.VSSpell001.severity = none
+
+# CS8602: Dereference of a possibly null reference.
+dotnet_diagnostic.CS8602.severity = none
