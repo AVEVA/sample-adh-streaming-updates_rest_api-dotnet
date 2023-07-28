@@ -38,13 +38,13 @@ namespace StreamingUpdatesRestApi
 
             // ==== Ids ====
             const string TypeId = "Simple Sds Time Value Type";
-            const string CommunityId = "";
             string signupId = "";
 
             // ==== Names ====
             const string SignupName = "signupSample";
             const string StreamNamePrefix = "stream_";
             const string NewStreamName = "newStream";
+            const string GetUpdatesHeader = "Get-Updates";
 
             // === Change this to desired number of streams to create and update ===
             const int NumOfStreamsToCreate = 3;
@@ -68,14 +68,8 @@ namespace StreamingUpdatesRestApi
             {
                 try
                 {
-                    // Add Community Id to Http Request Headers if necessary
-                    if (!string.IsNullOrEmpty(CommunityId))
-                    {
-                        httpClient.DefaultRequestHeaders.Add("Community-Id", CommunityId);
-                    }
-
                     // Step 2
-                    // Create a simple SDS Type.
+                    // Create a simple SDS Type
                     #region Step2
                     Console.WriteLine("Step 2: Creating a simple SDS Type");
                     SdsType type = SdsTypeBuilder.CreateSdsType<SdsSimpleType>();
@@ -97,7 +91,7 @@ namespace StreamingUpdatesRestApi
                             Id = StreamNamePrefix + i,
                             Name = StreamNamePrefix + i,
                             TypeId = type.Id,
-                            Description = $"Stream one for ADH Streaming Updates"
+                            Description = $"Stream {i} for ADH Streaming Updates"
                         };
 
                         sdsStream = await metadataService.GetOrCreateStreamAsync(sdsStream).ConfigureAwait(false);
@@ -133,7 +127,7 @@ namespace StreamingUpdatesRestApi
                     Console.WriteLine();
                     #endregion
 
-                    // Wait 10 seconds to allow signup to be ready to activate.
+                    // Wait 10 seconds to allow signup to be ready to activate
                     Thread.Sleep(10000);
 
                     // Step 5
@@ -143,12 +137,12 @@ namespace StreamingUpdatesRestApi
                     response = await httpClient.GetAsync(new Uri($"{resource}/api/v1-preview/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}", UriKind.Absolute)).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
 
-                    // Check signup state is active.
+                    // Check signup state is active
                     signup = JsonSerializer.Deserialize<Signup>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
                     Console.WriteLine($"Signup is now {signup?.SignupState}");
 
                     // Get Bookmark for GetUpdates Request from Headers
-                    string? getUpdates = response.Headers.TryGetValues("Get-Updates", out var values) ? values.FirstOrDefault(): null;
+                    string? getUpdates = response.Headers.TryGetValues(GetUpdatesHeader, out var values) ? values.FirstOrDefault(): null;
                     Console.WriteLine();
                     #endregion
 
@@ -202,15 +196,16 @@ namespace StreamingUpdatesRestApi
                         response = await httpClient.GetAsync(new Uri(getUpdates, UriKind.Absolute)).ConfigureAwait(false);
                     }
                     CheckIfResponseWasSuccessful(response);
-                    DataUpdate? dataUpdate = JsonSerializer.Deserialize<DataUpdate>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
+                    DataUpdate? dataUpdate = JsonSerializer.Deserialize<DataUpdate>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false),
+                                                                                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                     if (dataUpdate != null)
                     {
-                        foreach (var update in dataUpdate.data)
+                        foreach (var update in dataUpdate.Data)
                         {
-                            Console.WriteLine($"Update: {update.resourceId} {update.operation}");
+                            Console.WriteLine($"Update: {update.ResourceId} {update.Operation}");
 
-                            foreach (var updateEvent in update.events)
+                            foreach (var updateEvent in update.Events)
                             {
                                 Console.WriteLine($"\tTime: {updateEvent.Time} Value: {updateEvent.Value}");
                             }

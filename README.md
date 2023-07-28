@@ -27,6 +27,8 @@ The sample will perform the following procedures:
 1. Make an API request to GetSignupResources to view signup with updated resources
 1. Cleanup signup, streams, and type
 
+NOTE: Communication with SDS will be done via the .NET OCS Clients Library. Communication with Streaming Updates will be done using Http.
+
 ## Configuring the sample
 
 The sample is configured using the file appsettings.placeholder.json.  Before editing, rename this file to `appsettings.json`. This repository's `.gitignore` rules should prevent the file from ever being checked in to any fork or branch, to ensure credentials are not compromised. 
@@ -43,7 +45,7 @@ AVEVA Data Hub is secured by obtaining tokens from its identity endpoint. Client
 }
 ```
 
-Within the sample, there are configurable options for number of streams to create, number of streams to update, adding a community id to the HTTP request headers, and the signup name. Note, a community id or changing the configurable options is not required to use the sample.
+Within the sample, there are configurable options for number of streams to create, number of streams to update, and the signup name.
 
 ## Running the sample
 

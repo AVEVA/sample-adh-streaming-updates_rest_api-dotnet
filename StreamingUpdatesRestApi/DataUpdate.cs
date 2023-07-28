@@ -2,13 +2,13 @@
 {
     public class DataUpdate
     {
-        public IEnumerable<Update> data { get; set; }
+        public IEnumerable<Update> Data { get; set; }
     }
 
     public class Update
     {
-        public string resourceId { get; set; }
-        public string operation { get; set; }
-        public IEnumerable<SdsSimpleType> events { get; set; }
+        public string ResourceId { get; set; }
+        public string Operation { get; set; }
+        public IEnumerable<SdsSimpleType> Events { get; set; }
     }
 }
