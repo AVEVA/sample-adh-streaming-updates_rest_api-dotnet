@@ -127,8 +127,8 @@ namespace StreamingUpdatesRestApi
                     Console.WriteLine();
                     #endregion
 
-                    // Wait 10 seconds to allow signup to be ready to activate
-                    Thread.Sleep(10000);
+                    // 5 second delay to allow signup to be ready to activate
+                    Thread.Sleep(5000);
 
                     // Step 5
                     // Make an API request to GetSignup to activate the signup
@@ -150,7 +150,6 @@ namespace StreamingUpdatesRestApi
                     // Make an API request to GetSignupResources to view the signup's accessible and inaccessible resources
                     #region Step6
                     Console.WriteLine("Step 6: Get Signup Resources");
-                    Thread.Sleep(10000); // Add Delay to allow signup resources to be available
 
                     response = await httpClient.GetAsync(new Uri($"{resource}/api/v1-preview/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/resources", UriKind.Absolute)).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
@@ -183,9 +182,9 @@ namespace StreamingUpdatesRestApi
                     Console.WriteLine();
                     #endregion
 
-                    // 90 second delay to catch up to updates
+                    // 20 second delay to catch up to updates
                     Console.WriteLine("Waiting for updates to process\n");
-                    Thread.Sleep(90000);
+                    Thread.Sleep(20000);
 
                     // Step 8
                     // Make an API request to GetUpdates and ensure that data updates are received
