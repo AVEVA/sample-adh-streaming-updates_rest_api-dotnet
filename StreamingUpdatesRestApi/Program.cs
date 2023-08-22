@@ -149,8 +149,8 @@ namespace StreamingUpdatesRestApi
                     Console.WriteLine();
                     #endregion
 
-                    // 5 second delay to allow signup to be ready to activate
-                    Thread.Sleep(5000);
+                    // 1 second delay to allow signup to be ready to activate
+                    Thread.Sleep(1000);
 
                     // Step 5
                     // Make an API request to GetSignup to activate the signup
@@ -207,7 +207,7 @@ namespace StreamingUpdatesRestApi
                     Console.WriteLine();
                     #endregion
 
-                    // 20 second delay to catch up to updates
+                    // 20 second delay to catch up to updates. Continue polling if desired number of updates are not available or increase wait time.
                     Console.WriteLine("Waiting for updates to process\n");
                     Thread.Sleep(20000);
 
