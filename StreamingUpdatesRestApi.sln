@@ -7,6 +7,18 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StreamingUpdatesRestApi", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StreamingUpdatesRestApiTest", "StreamingUpdatesRestApiTest\StreamingUpdatesRestApiTest.csproj", "{AD658F0D-233B-4256-AB78-5F1D902F70CC}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8157E0FE-12B6-4A91-BF89-EA7084C10572}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		azure-pipelines.yml = azure-pipelines.yml
+		CODEOWNERS = CODEOWNERS
+		Directory.Build.props = Directory.Build.props
+		HISTORY.md = HISTORY.md
+		polaris.yml = polaris.yml
+		README.md = README.md
+		stylecop.json = stylecop.json
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
