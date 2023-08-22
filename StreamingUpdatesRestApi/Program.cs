@@ -35,7 +35,8 @@ namespace StreamingUpdatesRestApi
             string apiVersion = _configuration["ApiVersion"];
 
             // ==== Ids ====
-            const string TypeId = "SimpleSdsTypeId";
+            const string SimpleTypeId = "SimpleSdsTypeId";
+            const string PressureTemperatureTypeId = "PressureTemperatureTypeId";
             string signupId = "";
 
             // ==== Names ====
@@ -43,15 +44,16 @@ namespace StreamingUpdatesRestApi
             const string StreamNamePrefix = "stream_";
             const string NewStreamName = "newStream";
             const string GetUpdatesHeader = "Get-Updates";
+            const string PressureTemperatureStreamName = "Pressure Temperature Data Stream";
 
-            // === Change this to desired number of streams to create and update ===
+            // === Change this to desired number of simple sds type streams to create and update ===
             const int NumOfStreamsToCreate = 3;
             const int NumOfStreamsToUpdate = 3;
             #endregion
 
             // Step 1
             // Obtain authentication handler for ADH using Client-credential clients
-            // Create Sds communication services
+            // Create SDS communication services
             #region Step1
             Console.WriteLine("Step 1: Obtain authentication handler and create Sds communication services");
             AuthenticationHandler authenticationHandler = new (new Uri(resource), clientId, clientSecret);
@@ -68,11 +70,16 @@ namespace StreamingUpdatesRestApi
                     // Step 2
                     // Create a simple SDS Type
                     #region Step2
-                    Console.WriteLine("Step 2: Creating a simple SDS Type");
+                    Console.WriteLine("Step 2: Creating SDS Types");
                     SdsType type = SdsTypeBuilder.CreateSdsType<SdsSimpleType>();
-                    type.Id = TypeId;
+                    type.Id = SimpleTypeId;
                     type = await metadataService.GetOrCreateTypeAsync(type).ConfigureAwait(false);
                     Console.WriteLine();
+
+                    // Create a Pressure Temperature Data Type
+                    type = SdsTypeBuilder.CreateSdsType<PressureTemperatureData>();
+                    type.Id = PressureTemperatureTypeId;
+                    type = await metadataService.GetOrCreateTypeAsync(type).ConfigureAwait(false);
                     #endregion
 
                     // Step 3
@@ -87,13 +94,24 @@ namespace StreamingUpdatesRestApi
                         {
                             Id = StreamNamePrefix + i,
                             Name = StreamNamePrefix + i,
-                            TypeId = type.Id,
+                            TypeId = SimpleTypeId,
                             Description = $"Stream {i} for ADH Streaming Updates",
                         };
 
                         sdsStream = await metadataService.GetOrCreateStreamAsync(sdsStream).ConfigureAwait(false);
                         streamIdList.Add(sdsStream.Id);
                     }
+
+                    SdsStream pressureTemperatureStream = new SdsStream()
+                    {
+                        Id = PressureTemperatureStreamName,
+                        Name = PressureTemperatureStreamName,
+                        TypeId = PressureTemperatureTypeId,
+                        Description = "Pressure Temperature Data Stream for ADH Streaming Updates",
+                    };
+
+                    pressureTemperatureStream = await metadataService.GetOrCreateStreamAsync(pressureTemperatureStream).ConfigureAwait(false);
+                    streamIdList.Add(pressureTemperatureStream.Id);
 
                     Console.WriteLine();
                     #endregion
@@ -178,7 +196,7 @@ namespace StreamingUpdatesRestApi
                     // Step 7
                     // Make updates to the Streams (post data to stream)
                     #region Step7
-                    Console.WriteLine("Step 7: Making updates to previously created streams");
+                    Console.WriteLine("Step 7: Making updates to previously created simple SDS type streams");
 
                     for (int i = 0; i < NumOfStreamsToUpdate; i++)
                     {
@@ -230,13 +248,13 @@ namespace StreamingUpdatesRestApi
                     {
                         Id = NewStreamName,
                         Name = NewStreamName,
-                        TypeId = type.Id,
-                        Description = $"New Stream for ADH Streaming Updates",
+                        TypeId = PressureTemperatureTypeId,
+                        Description = $"New Pressure Temperature Stream for ADH Streaming Updates",
                     };
 
                     newSdsStream = await metadataService.GetOrCreateStreamAsync(newSdsStream).ConfigureAwait(false);
 
-                    Console.WriteLine("Step 9: Updating Signup Resources");
+                    Console.WriteLine("Step 9: Updating Signup Resources with new Pressure Temperature Stream");
                     SignupResourcesInput signupToUpdate = new SignupResourcesInput()
                     {
                         ResourcesToAdd = new List<string>() { newSdsStream.Id },
@@ -300,8 +318,15 @@ namespace StreamingUpdatesRestApi
 
                         Console.WriteLine($"Deleting {NewStreamName}.");
                         RunInTryCatch(metadataService.DeleteStreamAsync, NewStreamName);
-                        Console.WriteLine("Deleting Type.");
-                        RunInTryCatch(metadataService.DeleteTypeAsync, TypeId);
+
+                        Console.Write($"Deleting {PressureTemperatureStreamName}.");
+                        RunInTryCatch(metadataService.DeleteStreamAsync, PressureTemperatureStreamName);
+
+                        Console.WriteLine("Deleting Simple Type.");
+                        RunInTryCatch(metadataService.DeleteTypeAsync, SimpleTypeId);
+
+                        Console.WriteLine("Deleting Pressure Temperature Type.");
+                        RunInTryCatch(metadataService.DeleteTypeAsync, PressureTemperatureTypeId);
                     }
                     #endregion
                 }
