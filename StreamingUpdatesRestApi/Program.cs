@@ -34,8 +34,6 @@ namespace StreamingUpdatesRestApi
             string clientSecret = _configuration["ClientSecret"];
             string apiVersion = _configuration["ApiVersion"];
 
-            (_configuration as ConfigurationRoot).Dispose();
-
             // ==== Ids ====
             const string TypeId = "SimpleSdsTypeId";
             string signupId = "";
@@ -56,8 +54,7 @@ namespace StreamingUpdatesRestApi
             // Create Sds communication services
             #region Step1
             Console.WriteLine("Step 1: Obtain authentication handler and create Sds communication services");
-            Uri uriResource = new (resource);
-            AuthenticationHandler authenticationHandler = new (uriResource, clientId, clientSecret);
+            AuthenticationHandler authenticationHandler = new (new Uri(resource), clientId, clientSecret);
             SdsService sdsService = new (new Uri(resource), authenticationHandler);
             ISdsMetadataService metadataService = sdsService.GetMetadataService(tenantId, namespaceId);
             ISdsDataService dataService = sdsService.GetDataService(tenantId, namespaceId);
@@ -194,7 +191,7 @@ namespace StreamingUpdatesRestApi
 
                     // 20 second delay to catch up to updates
                     Console.WriteLine("Waiting for updates to process\n");
-                    Thread.Sleep(5000);
+                    Thread.Sleep(20000);
 
                     // Step 8
                     // Make an API request to GetUpdates and ensure that data updates are received
