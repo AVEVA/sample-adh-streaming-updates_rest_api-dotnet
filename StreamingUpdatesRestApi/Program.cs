@@ -35,8 +35,8 @@ namespace StreamingUpdatesRestApi
             string apiVersion = _configuration["ApiVersion"];
 
             // ==== Ids ====
-            const string SimpleTypeId = "SimpleSdsTypeId";
-            const string PressureTemperatureTypeId = "PressureTemperatureTypeId";
+            const string SimpleTypeId = "SimpleSdsTypeIdDotNet";
+            const string PressureTemperatureTypeId = "PressureTemperatureTypeIdDotNet";
             string signupId = "";
 
             // ==== Names ====
@@ -233,7 +233,7 @@ namespace StreamingUpdatesRestApi
 
                             foreach (var updateEvent in update.Events)
                             {
-                                Console.WriteLine($"\tTime: {updateEvent.Time} Value: {updateEvent.Value}");
+                                Console.WriteLine($"\tTime: {updateEvent.Timestamp} Value: {updateEvent.Value}");
                             }
                         }
                     }
@@ -369,9 +369,9 @@ namespace StreamingUpdatesRestApi
         {
             List<SdsSimpleType> data = new ()
             {
-                new SdsSimpleType { Time = DateTime.Now, Value = 10 },
-                new SdsSimpleType { Time = DateTime.Now, Value = 20 },
-                new SdsSimpleType { Time = DateTime.Now, Value = 30 },
+                new SdsSimpleType { Timestamp = DateTime.Now, Value = 10 },
+                new SdsSimpleType { Timestamp = DateTime.Now, Value = 20 },
+                new SdsSimpleType { Timestamp = DateTime.Now, Value = 30 },
             };
 
             return data;
