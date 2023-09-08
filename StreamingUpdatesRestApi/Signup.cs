@@ -9,10 +9,10 @@
 
         public ResourceType Type { get; set; }
 
-        public  DateTimeOffset CreatedDate { get; set; }
+        public DateTimeOffset CreatedDate { get; set; }
 
         public DateTimeOffset ModifiedDate { get; set; }
 
-        public string SignupState { get; set; }
+        public SignupState SignupState { get; set; }
     }
 }

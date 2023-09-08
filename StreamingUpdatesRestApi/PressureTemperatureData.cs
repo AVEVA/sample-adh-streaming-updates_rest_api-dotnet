@@ -2,11 +2,12 @@
 
 namespace StreamingUpdatesRestApi
 {
-    public class SdsSimpleType
+    public class PressureTemperatureData
     {
         [SdsMember(IsKey = true)]
         public DateTime Timestamp { get; set; }
 
-        public double Value { get; set; }
+        public double Pressure { get; set; }
+        public double Temperature { get; set; }
     }
 }
