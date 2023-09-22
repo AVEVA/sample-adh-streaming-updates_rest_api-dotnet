@@ -31,7 +31,7 @@ resources:
 variables:
   - template: '/miscellaneous/build_templates/variables.yml@templates'
   - name: analysisProject
-    value: SDS_TS_DotNet
+    value: sample-adh-streaming-updates_rest_api-dotnet
 
 parameters:
   - name: pool
