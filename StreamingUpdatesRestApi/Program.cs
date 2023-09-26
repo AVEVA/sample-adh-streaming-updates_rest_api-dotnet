@@ -134,7 +134,7 @@ namespace StreamingUpdatesRestApi
                     CheckIfResponseWasSuccessful(response);
 
                     // Get Signup Id from HttpResponse
-                    Signup signup = JsonSerializer.Deserialize<Signup>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
+                    Signup? signup = JsonSerializer.Deserialize<Signup>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
                     
                     if (signup != null)
                     {
