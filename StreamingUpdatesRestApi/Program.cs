@@ -135,16 +135,8 @@ namespace StreamingUpdatesRestApi
 
                     // Get Signup Id from HttpResponse
                     Signup signup = JsonSerializer.Deserialize<Signup>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
-                    
-                    if (signup != null)
-                    {
-                        signupId = signup.Id;
-                        Console.WriteLine($"Signup {signupId} has been created and is {signup?.SignupState}");
-                    }
-                    else
-                    {
-                        throw new NullReferenceException();
-                    }
+                    signupId = signup?.Id;
+                    Console.WriteLine($"Signup {signupId} has been created and is {signup?.SignupState}");
 
                     Console.WriteLine();
                     #endregion
