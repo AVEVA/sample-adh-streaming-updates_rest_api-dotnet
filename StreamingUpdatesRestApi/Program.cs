@@ -43,7 +43,6 @@ namespace StreamingUpdatesRestApi
             const string SignupName = "signupSample";
             const string StreamNamePrefix = "stream_";
             const string NewStreamName = "newStream";
-            const string GetUpdatesHeader = "Get-Updates";
             const string PressureTemperatureStreamName = "Pressure Temperature Data Stream";
 
             // === Change this to desired number of simple sds type streams to create and update ===
@@ -152,11 +151,17 @@ namespace StreamingUpdatesRestApi
                     CheckIfResponseWasSuccessful(response);
 
                     // Check signup state is active
-                    signup = JsonSerializer.Deserialize<Signup>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-                    Console.WriteLine($"Signup is now {signup?.SignupState}");
+                    var signupWithBookmark = JsonSerializer.Deserialize<SignupWithBookmark>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+                    Console.WriteLine($"Signup is now {signupWithBookmark?.Signup.SignupState}");
 
-                    // Get Bookmark for GetUpdates Request from Headers
-                    string getUpdates = response.Headers.TryGetValues(GetUpdatesHeader, out var values) ? values.FirstOrDefault() : null;
+                    // If the signup is not yet in the active state, then try allowing more time for the signup to activate.
+                    if (signupWithBookmark?.Signup.SignupState != SignupState.Active)
+                    {
+                        Console.WriteLine("A bookmark can only be obtained from an active signup.");
+                        return false;
+                    }
+
+                    string bookmark = signupWithBookmark.Bookmark;
                     Console.WriteLine();
                     #endregion
 
@@ -167,18 +172,14 @@ namespace StreamingUpdatesRestApi
 
                     response = await httpClient.GetAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/resources", UriKind.Absolute)).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
-                    SignupResourceIds resources = JsonSerializer.Deserialize<SignupResourceIds>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
 
-                    if (resources != null)
+                    var signupResources = JsonSerializer.Deserialize<List<SignupResource>>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
+
+                    if (signupResources != null)
                     {
-                        foreach (var resourceId in resources.AccessibleResources)
+                        foreach (var signupResource in signupResources)
                         {
-                            Console.WriteLine($"Accessible Resource: {resourceId}");
-                        }
-
-                        foreach (var resourceId in resources.InaccessibleResources)
-                        {
-                            Console.WriteLine($"Inaccessible Resource: {resourceId}");
+                            Console.WriteLine($"Resource: {signupResource.ResourceId}, Accessible: {signupResource.IsAccessible}");
                         }
                     }
 
@@ -208,14 +209,13 @@ namespace StreamingUpdatesRestApi
                     #region Step8
                     Console.WriteLine("Step 8: Get Updates");
 
-                    if (!string.IsNullOrEmpty(getUpdates))
-                    {
-                        response = await httpClient.GetAsync(new Uri(getUpdates, UriKind.Absolute)).ConfigureAwait(false);
-                    }
+                    response = await httpClient.GetAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/updates?bookmark={bookmark}", UriKind.Absolute)).ConfigureAwait(false);
 
                     CheckIfResponseWasSuccessful(response);
                     DataUpdate dataUpdate = JsonSerializer.Deserialize<DataUpdate>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false),
-                                                                                   new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                                                                                   new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) !;
+
+                    string nextBookmark = dataUpdate.Bookmark;
 
                     if (dataUpdate != null)
                     {
@@ -266,19 +266,36 @@ namespace StreamingUpdatesRestApi
                     Console.WriteLine("Step 10: Get Signup Resources");
                     response = await httpClient.GetAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/resources", UriKind.Absolute)).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
-                    resources = JsonSerializer.Deserialize<SignupResourceIds>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
+                    
+                    signupResources = JsonSerializer.Deserialize<List<SignupResource>>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
 
-                    if (resources != null)
+                    if (signupResources != null)
                     {
-                        foreach (var resourceId in resources.AccessibleResources)
+                        foreach (var signupResource in signupResources)
                         {
-                            Console.WriteLine($"Accessible Resource: {resourceId}");
+                            Console.WriteLine($"Resource: {signupResource.ResourceId}, Accessible: {signupResource.IsAccessible}");
                         }
+                    }
 
-                        foreach (var resourceId in resources.InaccessibleResources)
-                        {
-                            Console.WriteLine($"Inaccessible Resource: {resourceId}");
-                        }
+                    Console.WriteLine();
+                    #endregion
+
+                    // Step 11
+                    // Make a new API request to GetUpdates using the bookmark obtained from the previous GetUpdates response.
+                    #region Step11
+                    Console.WriteLine("Step 11: Get Updates");
+
+                    response = await httpClient.GetAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/updates?bookmark={nextBookmark}", UriKind.Absolute)).ConfigureAwait(false);
+
+                    CheckIfResponseWasSuccessful(response);
+
+                    dataUpdate = JsonSerializer.Deserialize<DataUpdate>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false),
+                                                                                   new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) !;
+
+                    // The response will not contain any data because no new events have been written to the streams in the signup.
+                    if (dataUpdate != null)
+                    {
+                        Console.WriteLine($"Event Count: {dataUpdate.Data.Count()}");
                     }
 
                     Console.WriteLine();
@@ -292,10 +309,10 @@ namespace StreamingUpdatesRestApi
                 }
                 finally
                 {
-                    // Step 11
+                    // Step 12
                     // Cleanup Resources
-                    #region Step11
-                    Console.WriteLine("Step 11: Cleaning Up");
+                    #region Step12
+                    Console.WriteLine("Step 12: Cleaning Up");
 
                     Console.WriteLine($"Deleting ADH Signup with id {signupId}");
                     RunInTryCatch(httpClient.DeleteAsync, $"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}");
