@@ -1,5 +1,6 @@
 ﻿using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using OSIsoft.Data;
 using OSIsoft.Data.Reflection;
@@ -11,6 +12,8 @@ namespace StreamingUpdatesRestApi
     {
         private static IConfiguration _configuration;
         private static Exception _toThrow;
+        private static JsonSerializerOptions _apiJsonOptions;
+        private static JsonSerializerOptions _dataJsonOptions;
 
         public static void Main()
         {
@@ -21,6 +24,12 @@ namespace StreamingUpdatesRestApi
         public static async Task<bool> MainAsync(bool test = false)
         {
             #region Setup
+            // streaming updates API serialization options
+            _apiJsonOptions = new JsonSerializerOptions() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            _apiJsonOptions.Converters.Add(new JsonStringEnumConverter());
+
+            _dataJsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
             _configuration = new ConfigurationBuilder()
                     .SetBasePath(Directory.GetCurrentDirectory())
                     .AddJsonFile("appsettings.json")
@@ -43,7 +52,6 @@ namespace StreamingUpdatesRestApi
             const string SignupName = "signupSample";
             const string StreamNamePrefix = "stream_";
             const string NewStreamName = "newStream";
-            const string PressureTemperatureStreamName = "Pressure Temperature Data Stream";
 
             // === Change this to desired number of simple sds type streams to create and update ===
             const int NumOfStreamsToCreate = 3;
@@ -73,12 +81,8 @@ namespace StreamingUpdatesRestApi
                     SdsType type = SdsTypeBuilder.CreateSdsType<SdsSimpleType>();
                     type.Id = SimpleTypeId;
                     type = await metadataService.GetOrCreateTypeAsync(type).ConfigureAwait(false);
+                    
                     Console.WriteLine();
-
-                    // Create a Pressure Temperature Data Type
-                    type = SdsTypeBuilder.CreateSdsType<PressureTemperatureData>();
-                    type.Id = PressureTemperatureTypeId;
-                    type = await metadataService.GetOrCreateTypeAsync(type).ConfigureAwait(false);
                     #endregion
 
                     // Step 3
@@ -101,17 +105,6 @@ namespace StreamingUpdatesRestApi
                         streamIdList.Add(sdsStream.Id);
                     }
 
-                    SdsStream pressureTemperatureStream = new SdsStream()
-                    {
-                        Id = PressureTemperatureStreamName,
-                        Name = PressureTemperatureStreamName,
-                        TypeId = PressureTemperatureTypeId,
-                        Description = "Pressure Temperature Data Stream for ADH Streaming Updates",
-                    };
-
-                    pressureTemperatureStream = await metadataService.GetOrCreateStreamAsync(pressureTemperatureStream).ConfigureAwait(false);
-                    streamIdList.Add(pressureTemperatureStream.Id);
-
                     Console.WriteLine();
                     #endregion
 
@@ -133,7 +126,7 @@ namespace StreamingUpdatesRestApi
                     CheckIfResponseWasSuccessful(response);
 
                     // Get Signup Id from HttpResponse
-                    Signup signup = JsonSerializer.Deserialize<Signup>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
+                    Signup signup = JsonSerializer.Deserialize<Signup>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), _apiJsonOptions);
                     signupId = signup?.Id;
                     Console.WriteLine($"Signup {signupId} has been created and is {signup?.SignupState}");
 
@@ -151,17 +144,17 @@ namespace StreamingUpdatesRestApi
                     CheckIfResponseWasSuccessful(response);
 
                     // Check signup state is active
-                    var signupWithBookmark = JsonSerializer.Deserialize<SignupWithBookmark>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-                    Console.WriteLine($"Signup is now {signupWithBookmark?.Signup.SignupState}");
+                    var signupWithBookmark = JsonSerializer.Deserialize<SignupWithBookmark>(await response.Content.ReadAsStringAsync().ConfigureAwait(false), _apiJsonOptions);
+                    Console.WriteLine($"Signup is now {signupWithBookmark?.SignupState}");
 
                     // If the signup is not yet in the active state, then try allowing more time for the signup to activate.
-                    if (signupWithBookmark?.Signup.SignupState != SignupState.Active)
+                    if (signupWithBookmark?.SignupState != SignupState.Active)
                     {
                         Console.WriteLine("A bookmark can only be obtained from an active signup.");
                         return false;
                     }
 
-                    string bookmark = signupWithBookmark.Bookmark;
+                    string bookmark = signupWithBookmark?.Bookmark;
                     Console.WriteLine();
                     #endregion
 
@@ -173,11 +166,11 @@ namespace StreamingUpdatesRestApi
                     response = await httpClient.GetAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/resources", UriKind.Absolute)).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
 
-                    var signupResources = JsonSerializer.Deserialize<List<SignupResource>>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
+                    var signupResources = JsonSerializer.Deserialize<SignupResources>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), _apiJsonOptions);
 
                     if (signupResources != null)
                     {
-                        foreach (var signupResource in signupResources)
+                        foreach (var signupResource in signupResources.Resources)
                         {
                             Console.WriteLine($"Resource: {signupResource.ResourceId}, Accessible: {signupResource.IsAccessible}");
                         }
@@ -212,8 +205,7 @@ namespace StreamingUpdatesRestApi
                     response = await httpClient.GetAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/updates?bookmark={bookmark}", UriKind.Absolute)).ConfigureAwait(false);
 
                     CheckIfResponseWasSuccessful(response);
-                    DataUpdate dataUpdate = JsonSerializer.Deserialize<DataUpdate>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false),
-                                                                                   new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) !;
+                    DataUpdate dataUpdate = JsonSerializer.Deserialize<DataUpdate>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), _dataJsonOptions) !;
 
                     string nextBookmark = dataUpdate.Bookmark;
 
@@ -267,11 +259,11 @@ namespace StreamingUpdatesRestApi
                     response = await httpClient.GetAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/resources", UriKind.Absolute)).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
                     
-                    signupResources = JsonSerializer.Deserialize<List<SignupResource>>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
+                    signupResources = JsonSerializer.Deserialize<SignupResources>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), _apiJsonOptions);
 
                     if (signupResources != null)
                     {
-                        foreach (var signupResource in signupResources)
+                        foreach (var signupResource in signupResources.Resources)
                         {
                             Console.WriteLine($"Resource: {signupResource.ResourceId}, Accessible: {signupResource.IsAccessible}");
                         }
@@ -289,8 +281,7 @@ namespace StreamingUpdatesRestApi
 
                     CheckIfResponseWasSuccessful(response);
 
-                    dataUpdate = JsonSerializer.Deserialize<DataUpdate>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false),
-                                                                                   new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) !;
+                    dataUpdate = JsonSerializer.Deserialize<DataUpdate>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), _dataJsonOptions) !;
 
                     // The response will not contain any data because no new events have been written to the streams in the signup.
                     if (dataUpdate != null)
@@ -328,14 +319,8 @@ namespace StreamingUpdatesRestApi
                         Console.WriteLine($"Deleting {NewStreamName}.");
                         RunInTryCatch(metadataService.DeleteStreamAsync, NewStreamName);
 
-                        Console.Write($"Deleting {PressureTemperatureStreamName}.");
-                        RunInTryCatch(metadataService.DeleteStreamAsync, PressureTemperatureStreamName);
-
                         Console.WriteLine("Deleting Simple Type.");
                         RunInTryCatch(metadataService.DeleteTypeAsync, SimpleTypeId);
-
-                        Console.WriteLine("Deleting Pressure Temperature Type.");
-                        RunInTryCatch(metadataService.DeleteTypeAsync, PressureTemperatureTypeId);
                     }
                     #endregion
                 }

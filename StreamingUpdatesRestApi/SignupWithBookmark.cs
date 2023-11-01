@@ -1,10 +1,8 @@
 ﻿namespace StreamingUpdatesRestApi
 {
     [Serializable]
-    public class SignupWithBookmark
+    public class SignupWithBookmark : Signup
     {
-        public Signup Signup { get; set; }
-
         public string Bookmark { get; set; }
     }
 }
