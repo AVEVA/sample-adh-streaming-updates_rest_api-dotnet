@@ -272,6 +272,7 @@ namespace StreamingUpdatesRestApi
                     };
 
                     newSdsStream = await metadataService.GetOrCreateStreamAsync(newSdsStream).ConfigureAwait(false);
+                    pressureTemperatureStreamIdList.Add(newSdsStream.Id);
 
                     Console.WriteLine("Step 9: Updating Signup Resources with new Pressure Temperature Stream");
                     SignupResourcesInput signupToUpdate = new SignupResourcesInput()
@@ -343,12 +344,6 @@ namespace StreamingUpdatesRestApi
 
                     if (metadataService != null)
                     {
-                        ////for (int i = 0; i < NumOfStreamsToCreate; i++)
-                        ////{
-                        ////    Console.WriteLine($"Deleting {SimpleStreamNamePrefix + i}");
-                        ////    RunInTryCatch(metadataService.DeleteStreamAsync, SimpleStreamNamePrefix + i);
-                        ////}
-                        
                         foreach (var streamId in simpleStreamIdList)
                         {
                             Console.WriteLine($"Deleting {streamId}");
@@ -360,9 +355,6 @@ namespace StreamingUpdatesRestApi
                             Console.WriteLine($"Deleting {streamId}");
                             RunInTryCatch(metadataService.DeleteStreamAsync, streamId);
                         }
-
-                        ////Console.WriteLine($"Deleting {NewStreamName}.");
-                        ////RunInTryCatch(metadataService.DeleteStreamAsync, NewStreamName);
 
                         Console.WriteLine($"Deleting type: {nameof(SdsSimpleType)}.");
                         RunInTryCatch(metadataService.DeleteTypeAsync, SimpleTypeId);
