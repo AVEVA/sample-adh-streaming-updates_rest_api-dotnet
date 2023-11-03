@@ -335,7 +335,7 @@ namespace StreamingUpdatesRestApi
                     var newUpdates = jsonDocumentNext.RootElement.GetProperty(Data).EnumerateArray();
 
                     // The response will not contain any data because no new events have been written to the streams in the signup.
-                    Console.WriteLine($"Event Count: {newUpdates.Count()}");
+                    Console.WriteLine($"Updates Count: {newUpdates.Count()}");
 
                     Console.WriteLine();
                     #endregion
