@@ -11,8 +11,8 @@ namespace StreamingUpdatesRestApi
 {
     public static class Program
     {
-        private const string SimpleStreamNamePrefix = "simpleStream_";
-        private const string PressureTemperatureStreamPrefix = "pressureTemperatureStream_";
+        private const string SimpleStreamPrefix = "simpleStream_";
+        private const string WeatherDataStreamPrefix = "weatherDataStream_";
 
         private static IConfiguration _configuration;
         private static Exception _toThrow;
@@ -50,16 +50,18 @@ namespace StreamingUpdatesRestApi
 
             // ==== Ids ====
             const string SimpleTypeId = "SimpleSdsTypeIdDotNet";
-            const string PressureTemperatureTypeId = "PressureTemperatureTypeIdDotNet";
+            const string WeatherDataTypeId = "WeatherDataTypeIdDotNet";
             string signupId = "";
 
             // ==== Names ====
             const string SignupName = "signupSample";
             
-            // === Change this to desired number of simple sds type streams to create and update ===
-            const int NumOfSimpleStreamsToCreate = 2;
+            // === Change these values to modify the number of streams to be created ===
+            const int SimpleStreamsToCreate = 2;
+            const int WeatherDataStreamsToCreate = 1;
+
             List<string> simpleStreamIdList = new List<string>();
-            List<string> pressureTemperatureStreamIdList = new List<string>();
+            List<string> weatherDataStreamIdList = new List<string>();
             #endregion
 
             // Step 1
@@ -88,9 +90,9 @@ namespace StreamingUpdatesRestApi
                     type.Id = SimpleTypeId;
                     type = await metadataService.GetOrCreateTypeAsync(type).ConfigureAwait(false);
 
-                    // Create PressureTemperatureData type
-                    type = SdsTypeBuilder.CreateSdsType<PressureTemperatureData>();
-                    type.Id = PressureTemperatureTypeId;
+                    // Create WeatherDataType
+                    type = SdsTypeBuilder.CreateSdsType<WeatherDataType>();
+                    type.Id = WeatherDataTypeId;
                     type = await metadataService.GetOrCreateTypeAsync(type).ConfigureAwait(false);
 
                     Console.WriteLine();
@@ -103,12 +105,12 @@ namespace StreamingUpdatesRestApi
                     List<string> streamsToAdd = new ();
 
                     // Create streams for SdsSimpleType
-                    for (int i = 0; i < NumOfSimpleStreamsToCreate; i++)
+                    for (int i = 0; i < SimpleStreamsToCreate; i++)
                     {
                         SdsStream sdsStream = new SdsStream()
                         {
-                            Id = SimpleStreamNamePrefix + i,
-                            Name = SimpleStreamNamePrefix + i,
+                            Id = SimpleStreamPrefix + i,
+                            Name = SimpleStreamPrefix + i,
                             TypeId = SimpleTypeId,
                             Description = $"Simple Stream for ADH Streaming Updates",
                         };
@@ -119,18 +121,22 @@ namespace StreamingUpdatesRestApi
 
                     streamsToAdd.AddRange(simpleStreamIdList);
 
-                    // Create stream for PressureTemperatureData
-                    SdsStream pressureTemperatureStream = new SdsStream()
+                    // Create streams for PressureTemperatureData
+                    for (int i = 0; i < WeatherDataStreamsToCreate; i++)
                     {
-                        Id = PressureTemperatureStreamPrefix + "0",
-                        Name = PressureTemperatureStreamPrefix + "0",
-                        TypeId = PressureTemperatureTypeId,
-                        Description = "Pressure Temperature Data Stream for ADH Streaming Updates",
-                    };
+                        SdsStream weatherDataStream = new SdsStream()
+                        {
+                            Id = WeatherDataStreamPrefix + i,
+                            Name = WeatherDataStreamPrefix + i,
+                            TypeId = WeatherDataTypeId,
+                            Description = "Weather Data Stream for ADH Streaming Updates",
+                        };
 
-                    pressureTemperatureStream = await metadataService.GetOrCreateStreamAsync(pressureTemperatureStream).ConfigureAwait(false);
-                    pressureTemperatureStreamIdList.Add(pressureTemperatureStream.Id);
-                    streamsToAdd.AddRange(pressureTemperatureStreamIdList);
+                        weatherDataStream = await metadataService.GetOrCreateStreamAsync(weatherDataStream).ConfigureAwait(false);
+                        weatherDataStreamIdList.Add(weatherDataStream.Id);
+                    }
+
+                    streamsToAdd.AddRange(weatherDataStreamIdList);
 
                     Console.WriteLine();
                     #endregion
@@ -219,9 +225,9 @@ namespace StreamingUpdatesRestApi
                     }
 
                     // populate pressure-temperature streams
-                    foreach (var streamId in pressureTemperatureStreamIdList)
+                    foreach (var streamId in weatherDataStreamIdList)
                     {
-                        await dataService.InsertValuesAsync(streamId, GetPressureTemperatureData()).ConfigureAwait(false);
+                        await dataService.InsertValuesAsync(streamId, GetWeatherData()).ConfigureAwait(false);
                     }
 
                     Console.WriteLine();
@@ -243,17 +249,19 @@ namespace StreamingUpdatesRestApi
                     JsonElement rootElement = jsonDocument.RootElement;
 
                     string nextBookmark = rootElement.GetProperty("bookmark").GetString();
-                    var transactions = rootElement.GetProperty("data").EnumerateArray(); 
+                    var updates = rootElement.GetProperty("data").EnumerateArray(); 
 
-                    foreach (JsonElement transaction in transactions)
+                    // Note: The order in which update operations (e.g. id: Stream A, operation: Insert) stream are returned can be different from the order in which they are written
+                    // however, the order of individual data events for a stream (e.g. Timestamp 12:00:00, Value: 23) is preserved.
+                    foreach (JsonElement update in updates)
                     {
-                        if (IsSdsSimpleType(transaction))
+                        if (IsSdsSimpleType(update))
                         {
-                            ProcessSdsSimpleTypeEvents(transaction);
+                            ProcessSdsSimpleTypeEvents(update);
                         }
                         else
                         {
-                            ProcessPressureTemperatureEvents(transaction);
+                            ProcessWeatherDataEvents(update);
                         }
                     }
 
@@ -265,14 +273,14 @@ namespace StreamingUpdatesRestApi
                     #region Step9
                     SdsStream newSdsStream = new SdsStream()
                     {
-                        Id = PressureTemperatureStreamPrefix + "New",
-                        Name = PressureTemperatureStreamPrefix + "New",
-                        TypeId = PressureTemperatureTypeId,
-                        Description = $"New Pressure Temperature Stream for ADH Streaming Updates",
+                        Id = WeatherDataStreamPrefix + "New",
+                        Name = WeatherDataStreamPrefix + "New",
+                        TypeId = WeatherDataTypeId,
+                        Description = $"New Weather Data Stream for ADH Streaming Updates",
                     };
 
                     newSdsStream = await metadataService.GetOrCreateStreamAsync(newSdsStream).ConfigureAwait(false);
-                    pressureTemperatureStreamIdList.Add(newSdsStream.Id);
+                    weatherDataStreamIdList.Add(newSdsStream.Id);
 
                     Console.WriteLine("Step 9: Updating Signup Resources with new Pressure Temperature Stream");
                     SignupResourcesInput signupToUpdate = new SignupResourcesInput()
@@ -350,17 +358,17 @@ namespace StreamingUpdatesRestApi
                             RunInTryCatch(metadataService.DeleteStreamAsync, streamId);
                         }
 
-                        foreach (var streamId in pressureTemperatureStreamIdList)
+                        foreach (var streamId in weatherDataStreamIdList)
                         {
                             Console.WriteLine($"Deleting {streamId}");
                             RunInTryCatch(metadataService.DeleteStreamAsync, streamId);
                         }
 
-                        Console.WriteLine($"Deleting type: {nameof(SdsSimpleType)}.");
+                        Console.WriteLine($"Deleting {nameof(SdsSimpleType)}.");
                         RunInTryCatch(metadataService.DeleteTypeAsync, SimpleTypeId);
 
-                        Console.WriteLine($"Deleting type: {nameof(PressureTemperatureData)}.");
-                        RunInTryCatch(metadataService.DeleteTypeAsync, PressureTemperatureTypeId);
+                        Console.WriteLine($"Deleting {nameof(WeatherDataType)}.");
+                        RunInTryCatch(metadataService.DeleteTypeAsync, WeatherDataTypeId);
                     }
                     #endregion
                 }
@@ -411,12 +419,12 @@ namespace StreamingUpdatesRestApi
             return data;
         }
 
-        private static IList<PressureTemperatureData> GetPressureTemperatureData()
+        private static IList<WeatherDataType> GetWeatherData()
         {
-            List<PressureTemperatureData> data = new ()
+            List<WeatherDataType> data = new ()
             {
-                new PressureTemperatureData { Timestamp = DateTime.Now, Pressure = 101.3, Temperature = 25.0 },
-                new PressureTemperatureData { Timestamp = DateTime.Now, Pressure = 101.4, Temperature = 25.1 },
+                new WeatherDataType { Timestamp = DateTime.Now, Humidity = 40.0, Temperature = 25.0 },
+                new WeatherDataType { Timestamp = DateTime.Now, Humidity = 40.1, Temperature = 25.1 },
             };
 
             return data;
@@ -425,7 +433,7 @@ namespace StreamingUpdatesRestApi
         private static bool IsSdsSimpleType(JsonElement transaction)
         {
             string id = transaction.GetProperty("resourceId").GetString() ?? string.Empty;
-            return id.StartsWith(SimpleStreamNamePrefix, StringComparison.OrdinalIgnoreCase);
+            return id.StartsWith(SimpleStreamPrefix, StringComparison.OrdinalIgnoreCase);
         }
 
         private static void ProcessSdsSimpleTypeEvents(JsonElement transaction)
@@ -443,7 +451,7 @@ namespace StreamingUpdatesRestApi
             }
         }
 
-        private static void ProcessPressureTemperatureEvents(JsonElement transaction)
+        private static void ProcessWeatherDataEvents(JsonElement transaction)
         {
             string id = transaction.GetProperty("resourceId").GetString();
             string operation = transaction.GetProperty("operation").GetString();
@@ -453,8 +461,8 @@ namespace StreamingUpdatesRestApi
             Console.WriteLine($"operation: {operation}");
             foreach (JsonElement jsonDataEvent in events)
             {
-                PressureTemperatureData dataEvent = JsonSerializer.Deserialize<PressureTemperatureData>(jsonDataEvent);
-                Console.WriteLine($"\tTimestamp: {dataEvent?.Timestamp}, Pressure: {dataEvent?.Pressure}, Temperature: {dataEvent?.Temperature}");
+                WeatherDataType dataEvent = JsonSerializer.Deserialize<WeatherDataType>(jsonDataEvent);
+                Console.WriteLine($"\tTimestamp: {dataEvent?.Timestamp}, Pressure: {dataEvent?.Humidity}, Temperature: {dataEvent?.Temperature}");
             }
         }
     }
