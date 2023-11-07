@@ -1,16 +1,26 @@
 ﻿using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using OSIsoft.Data;
 using OSIsoft.Data.Reflection;
 using OSIsoft.Identity;
+using static System.Text.Json.JsonElement;
 
 namespace StreamingUpdatesRestApi
 {
     public static class Program
     {
+        // stream id and name prefixes
+        private const string SimpleStreamPrefix = "simpleStream_";
+        private const string WeatherDataStreamPrefix = "weatherDataStream_";
+
         private static IConfiguration _configuration;
         private static Exception _toThrow;
+        private static JsonSerializerOptions _apiJsonOptions;
+        private static JsonSerializerOptions _dataJsonOptions;
+
+        private static DateTime _startTime = DateTime.UtcNow;
 
         public static void Main()
         {
@@ -21,6 +31,13 @@ namespace StreamingUpdatesRestApi
         public static async Task<bool> MainAsync(bool test = false)
         {
             #region Setup
+            // streaming updates API serialization options
+            _apiJsonOptions = new JsonSerializerOptions() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            _apiJsonOptions.Converters.Add(new JsonStringEnumConverter());
+
+            // data serialization options
+            _dataJsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
             _configuration = new ConfigurationBuilder()
                     .SetBasePath(Directory.GetCurrentDirectory())
                     .AddJsonFile("appsettings.json")
@@ -36,19 +53,18 @@ namespace StreamingUpdatesRestApi
 
             // ==== Ids ====
             const string SimpleTypeId = "SimpleSdsTypeIdDotNet";
-            const string PressureTemperatureTypeId = "PressureTemperatureTypeIdDotNet";
+            const string WeatherDataTypeId = "WeatherDataTypeIdDotNet";
             string signupId = "";
 
             // ==== Names ====
             const string SignupName = "signupSample";
-            const string StreamNamePrefix = "stream_";
-            const string NewStreamName = "newStream";
-            const string GetUpdatesHeader = "Get-Updates";
-            const string PressureTemperatureStreamName = "Pressure Temperature Data Stream";
+            
+            // === Change these values to modify the number of streams to create ===
+            const int SimpleStreamsToCreate = 2;
+            const int WeatherDataStreamsToCreate = 1;
 
-            // === Change this to desired number of simple sds type streams to create and update ===
-            const int NumOfStreamsToCreate = 3;
-            const int NumOfStreamsToUpdate = 3;
+            List<string> simpleStreamIdList = new List<string>();
+            List<string> weatherDataStreamIdList = new List<string>();
             #endregion
 
             // Step 1
@@ -68,50 +84,62 @@ namespace StreamingUpdatesRestApi
                 try
                 {
                     // Step 2
-                    // Create a simple SDS Type
+                    // Create SDS Types
                     #region Step2
                     Console.WriteLine("Step 2: Creating SDS Types");
+
+                    // Create SdsSimpleType
                     SdsType type = SdsTypeBuilder.CreateSdsType<SdsSimpleType>();
                     type.Id = SimpleTypeId;
                     type = await metadataService.GetOrCreateTypeAsync(type).ConfigureAwait(false);
-                    Console.WriteLine();
 
-                    // Create a Pressure Temperature Data Type
-                    type = SdsTypeBuilder.CreateSdsType<PressureTemperatureData>();
-                    type.Id = PressureTemperatureTypeId;
+                    // Create WeatherDataType
+                    type = SdsTypeBuilder.CreateSdsType<WeatherDataType>();
+                    type.Id = WeatherDataTypeId;
                     type = await metadataService.GetOrCreateTypeAsync(type).ConfigureAwait(false);
+
+                    Console.WriteLine();
                     #endregion
 
                     // Step 3
                     // Create SDS Streams and populate list of stream Ids for creating signup
                     #region Step3
                     Console.WriteLine("Step 3: Creating SDS Streams and populate list of stream Ids");
-                    List<string> streamIdList = new List<string>();
+                    List<string> streamsToAdd = new ();
 
-                    for (int i = 0; i < NumOfStreamsToCreate; i++)
+                    // Create streams for SdsSimpleType
+                    for (int i = 0; i < SimpleStreamsToCreate; i++)
                     {
                         SdsStream sdsStream = new SdsStream()
                         {
-                            Id = StreamNamePrefix + i,
-                            Name = StreamNamePrefix + i,
+                            Id = SimpleStreamPrefix + i,
+                            Name = SimpleStreamPrefix + i,
                             TypeId = SimpleTypeId,
-                            Description = $"Stream {i} for ADH Streaming Updates",
+                            Description = $"Simple Stream for ADH Streaming Updates",
                         };
 
                         sdsStream = await metadataService.GetOrCreateStreamAsync(sdsStream).ConfigureAwait(false);
-                        streamIdList.Add(sdsStream.Id);
+                        simpleStreamIdList.Add(sdsStream.Id);
                     }
 
-                    SdsStream pressureTemperatureStream = new SdsStream()
-                    {
-                        Id = PressureTemperatureStreamName,
-                        Name = PressureTemperatureStreamName,
-                        TypeId = PressureTemperatureTypeId,
-                        Description = "Pressure Temperature Data Stream for ADH Streaming Updates",
-                    };
+                    streamsToAdd.AddRange(simpleStreamIdList);
 
-                    pressureTemperatureStream = await metadataService.GetOrCreateStreamAsync(pressureTemperatureStream).ConfigureAwait(false);
-                    streamIdList.Add(pressureTemperatureStream.Id);
+                    // Create streams for WeatherDataType
+                    for (int i = 0; i < WeatherDataStreamsToCreate; i++)
+                    {
+                        SdsStream weatherDataStream = new SdsStream()
+                        {
+                            Id = WeatherDataStreamPrefix + i,
+                            Name = WeatherDataStreamPrefix + i,
+                            TypeId = WeatherDataTypeId,
+                            Description = "Weather Data Stream for ADH Streaming Updates",
+                        };
+
+                        weatherDataStream = await metadataService.GetOrCreateStreamAsync(weatherDataStream).ConfigureAwait(false);
+                        weatherDataStreamIdList.Add(weatherDataStream.Id);
+                    }
+
+                    streamsToAdd.AddRange(weatherDataStreamIdList);
 
                     Console.WriteLine();
                     #endregion
@@ -125,7 +153,7 @@ namespace StreamingUpdatesRestApi
                     {
                         Name = SignupName,
                         ResourceType = ResourceType.Stream,
-                        ResourceIds = streamIdList,
+                        ResourceIds = streamsToAdd,
                     };
 
                     using StringContent signupToCreateString = new (JsonSerializer.Serialize(signupToCreate));
@@ -134,7 +162,7 @@ namespace StreamingUpdatesRestApi
                     CheckIfResponseWasSuccessful(response);
 
                     // Get Signup Id from HttpResponse
-                    Signup signup = JsonSerializer.Deserialize<Signup>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
+                    Signup signup = JsonSerializer.Deserialize<Signup>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), _apiJsonOptions);
                     signupId = signup?.Id;
                     Console.WriteLine($"Signup {signupId} has been created and is {signup?.SignupState}");
 
@@ -152,11 +180,17 @@ namespace StreamingUpdatesRestApi
                     CheckIfResponseWasSuccessful(response);
 
                     // Check signup state is active
-                    signup = JsonSerializer.Deserialize<Signup>(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-                    Console.WriteLine($"Signup is now {signup?.SignupState}");
+                    var signupWithBookmark = JsonSerializer.Deserialize<SignupWithBookmark>(await response.Content.ReadAsStringAsync().ConfigureAwait(false), _apiJsonOptions);
+                    Console.WriteLine($"Signup is now {signupWithBookmark?.SignupState}");
 
-                    // Get Bookmark for GetUpdates Request from Headers
-                    string getUpdates = response.Headers.TryGetValues(GetUpdatesHeader, out var values) ? values.FirstOrDefault() : null;
+                    // If the signup is not yet in the active state, then try allowing more time for the signup to activate.
+                    if (signupWithBookmark?.SignupState != SignupState.Active)
+                    {
+                        Console.WriteLine("A bookmark can only be obtained from an active signup.");
+                        return false;
+                    }
+
+                    string bookmark = signupWithBookmark?.Bookmark;
                     Console.WriteLine();
                     #endregion
 
@@ -167,18 +201,14 @@ namespace StreamingUpdatesRestApi
 
                     response = await httpClient.GetAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/resources", UriKind.Absolute)).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
-                    SignupResourceIds resources = JsonSerializer.Deserialize<SignupResourceIds>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
 
-                    if (resources != null)
+                    var signupResources = JsonSerializer.Deserialize<SignupResources>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), _apiJsonOptions);
+
+                    if (signupResources != null)
                     {
-                        foreach (var resourceId in resources.AccessibleResources)
+                        foreach (var signupResource in signupResources.Resources)
                         {
-                            Console.WriteLine($"Accessible Resource: {resourceId}");
-                        }
-
-                        foreach (var resourceId in resources.InaccessibleResources)
-                        {
-                            Console.WriteLine($"Inaccessible Resource: {resourceId}");
+                            Console.WriteLine($"Resource: {signupResource.ResourceId}, Accessible: {signupResource.IsAccessible}");
                         }
                     }
 
@@ -188,49 +218,51 @@ namespace StreamingUpdatesRestApi
                     // Step 7
                     // Make updates to the Streams (post data to stream)
                     #region Step7
-                    Console.WriteLine("Step 7: Making updates to previously created simple SDS type streams");
-
-                    for (int i = 0; i < NumOfStreamsToUpdate; i++)
+                    Console.WriteLine("Step 7: Writing insert operations to the streams");
+                    
+                    // populate simple streams
+                    foreach (var streamId in simpleStreamIdList)
                     {
-                        var streamId = StreamNamePrefix + i;
-                        await dataService.InsertValuesAsync(streamId, GetData()).ConfigureAwait(false);
+                        await dataService.InsertValuesAsync(streamId, GetSimpleData()).ConfigureAwait(false);
                     }
 
-                    Console.WriteLine();
-                    #endregion
+                    // populate weather data streams
+                    foreach (var streamId in weatherDataStreamIdList)
+                    {
+                        await dataService.InsertValuesAsync(streamId, GetWeatherData()).ConfigureAwait(false);
+                    }
 
                     // 20 second delay to catch up to updates. Continue polling if desired number of updates are not available or increase wait time.
                     Console.WriteLine("Waiting for updates to process\n");
                     Thread.Sleep(20000);
+                    #endregion
 
                     // Step 8
                     // Make an API request to GetUpdates and ensure that data updates are received
                     #region Step8
                     Console.WriteLine("Step 8: Get Updates");
 
-                    if (!string.IsNullOrEmpty(getUpdates))
-                    {
-                        response = await httpClient.GetAsync(new Uri(getUpdates, UriKind.Absolute)).ConfigureAwait(false);
-                    }
-
+                    response = await httpClient.GetAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/updates?bookmark={bookmark}", UriKind.Absolute)).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
-                    DataUpdate dataUpdate = JsonSerializer.Deserialize<DataUpdate>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false),
-                                                                                   new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                    if (dataUpdate != null)
+                    DataUpdate dataUpdate = JsonSerializer.Deserialize<DataUpdate>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), _dataJsonOptions) !;
+
+                    // Note:The sequence in which update operations, (e.g. resourceId: Stream A, operation: Insert, events: [...]) are returned may differ from
+                    // the order in which they are written. The order of data events within a stream, (e.g. Timestamp 12:00:00, Value: 23) is preserved.
+                    foreach (Update update in dataUpdate.Data)
                     {
-                        foreach (var update in dataUpdate.Data)
+                        if (IsSdsSimpleType(update))
                         {
-                            Console.WriteLine($"Update: {update.ResourceId} {update.Operation}");
-
-                            foreach (var updateEvent in update.Events)
-                            {
-                                Console.WriteLine($"\tTime: {updateEvent.Timestamp} Value: {updateEvent.Value}");
-                            }
+                            ProcessSimpleStreamUpdate(update);
                         }
-                    }
+                        else
+                        {
+                            ProcessWeatherDataUpdate(update);
+                        }
 
-                    Console.WriteLine();
+                        Console.WriteLine();
+                    }
+                    
                     #endregion
 
                     // Step 9
@@ -238,15 +270,16 @@ namespace StreamingUpdatesRestApi
                     #region Step9
                     SdsStream newSdsStream = new SdsStream()
                     {
-                        Id = NewStreamName,
-                        Name = NewStreamName,
-                        TypeId = PressureTemperatureTypeId,
-                        Description = $"New Pressure Temperature Stream for ADH Streaming Updates",
+                        Id = WeatherDataStreamPrefix + "New",
+                        Name = WeatherDataStreamPrefix + "New",
+                        TypeId = WeatherDataTypeId,
+                        Description = $"New Weather Data Stream for ADH Streaming Updates",
                     };
 
                     newSdsStream = await metadataService.GetOrCreateStreamAsync(newSdsStream).ConfigureAwait(false);
+                    weatherDataStreamIdList.Add(newSdsStream.Id);
 
-                    Console.WriteLine("Step 9: Updating Signup Resources with new Pressure Temperature Stream");
+                    Console.WriteLine("Step 9: Updating Signup Resources with a new Weather Data Stream");
                     SignupResourcesInput signupToUpdate = new SignupResourcesInput()
                     {
                         ResourcesToAdd = new List<string>() { newSdsStream.Id },
@@ -266,19 +299,70 @@ namespace StreamingUpdatesRestApi
                     Console.WriteLine("Step 10: Get Signup Resources");
                     response = await httpClient.GetAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/resources", UriKind.Absolute)).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
-                    resources = JsonSerializer.Deserialize<SignupResourceIds>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
+                    
+                    signupResources = JsonSerializer.Deserialize<SignupResources>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), _apiJsonOptions);
 
-                    if (resources != null)
+                    if (signupResources != null)
                     {
-                        foreach (var resourceId in resources.AccessibleResources)
+                        foreach (var signupResource in signupResources.Resources)
                         {
-                            Console.WriteLine($"Accessible Resource: {resourceId}");
+                            Console.WriteLine($"Resource: {signupResource.ResourceId}, Accessible: {signupResource.IsAccessible}");
+                        }
+                    }
+
+                    Console.WriteLine();
+                    #endregion
+
+                    // Step 11
+                    // Populate streams using non-Insert operations
+                    #region Step11
+                    Console.WriteLine("Step 11: Writing update, replace, remove and remove window operations to the streams");
+
+                    DateTime timestamp = DateTime.UtcNow;
+                    var simpleUpdate = new SdsSimpleType() { Timestamp = timestamp, Value = 3.14 };
+                    var simpleReplace = new SdsSimpleType() { Timestamp = timestamp, Value = 6.28 };
+
+                    string simpleStreamId = simpleStreamIdList.FirstOrDefault();
+                    await dataService.UpdateValueAsync(simpleStreamId, simpleUpdate).ConfigureAwait(false);
+                    await dataService.ReplaceValueAsync(simpleStreamId, simpleReplace).ConfigureAwait(false);
+                    await dataService.RemoveValueAsync(simpleStreamId, timestamp).ConfigureAwait(false);
+
+                    string weatherDataStreamId = weatherDataStreamIdList.FirstOrDefault();
+                    
+                    // delete the previously written weather data events using RemoveWindow
+                    await dataService.RemoveWindowValuesAsync(weatherDataStreamId, _startTime, timestamp).ConfigureAwait(false);
+
+                    // 20 second delay to catch up to updates. Continue polling if desired number of updates are not available or increase wait time.
+                    Console.WriteLine("Waiting for updates to process\n");
+                    Thread.Sleep(20000);
+                    #endregion
+
+                    // Step 12
+                    // Make a new API request to GetUpdates using the bookmark obtained from the previous GetUpdates response to
+                    // demonstrate update retrieval  other operation types (for example, Replace, Update, Remove and RemoveWindow).
+                    #region Step12
+                    Console.WriteLine("Step 12: Get Updates");
+
+                    response = await httpClient.GetAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/updates?bookmark={dataUpdate.Bookmark}", UriKind.Absolute)).ConfigureAwait(false);
+
+                    CheckIfResponseWasSuccessful(response);
+
+                    DataUpdate newDataUpdate = JsonSerializer.Deserialize<DataUpdate>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), _dataJsonOptions) !;
+
+                    // Note you can use the Common Langauage Runtime (CLR) time to deserialize the Remove and RemoveWindow operations, but only the Timestamp property
+                    // will be populated. The RemoveWindow updates will not indicate if any events were deleted, only the start and end times of the RemoveWindow request. 
+                    foreach (Update update in newDataUpdate.Data)
+                    {
+                        if (IsSdsSimpleType(update))
+                        {
+                            ProcessSimpleStreamUpdate(update);
+                        }
+                        else
+                        {
+                            ProcessWeatherDataUpdate(update);
                         }
 
-                        foreach (var resourceId in resources.InaccessibleResources)
-                        {
-                            Console.WriteLine($"Inaccessible Resource: {resourceId}");
-                        }
+                        Console.WriteLine();
                     }
 
                     Console.WriteLine();
@@ -292,33 +376,33 @@ namespace StreamingUpdatesRestApi
                 }
                 finally
                 {
-                    // Step 11
+                    // Step 13
                     // Cleanup Resources
-                    #region Step11
-                    Console.WriteLine("Step 11: Cleaning Up");
+                    #region Step13
+                    Console.WriteLine("Step 13: Cleaning Up");
 
                     Console.WriteLine($"Deleting ADH Signup with id {signupId}");
                     RunInTryCatch(httpClient.DeleteAsync, $"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}");
 
                     if (metadataService != null)
                     {
-                        for (int i = 0; i < NumOfStreamsToCreate; i++)
+                        foreach (var streamId in simpleStreamIdList)
                         {
-                            Console.WriteLine($"Deleting {StreamNamePrefix + i}");
-                            RunInTryCatch(metadataService.DeleteStreamAsync, StreamNamePrefix + i);
+                            Console.WriteLine($"Deleting {streamId}");
+                            RunInTryCatch(metadataService.DeleteStreamAsync, streamId);
                         }
 
-                        Console.WriteLine($"Deleting {NewStreamName}.");
-                        RunInTryCatch(metadataService.DeleteStreamAsync, NewStreamName);
+                        foreach (var streamId in weatherDataStreamIdList)
+                        {
+                            Console.WriteLine($"Deleting {streamId}");
+                            RunInTryCatch(metadataService.DeleteStreamAsync, streamId);
+                        }
 
-                        Console.Write($"Deleting {PressureTemperatureStreamName}.");
-                        RunInTryCatch(metadataService.DeleteStreamAsync, PressureTemperatureStreamName);
-
-                        Console.WriteLine("Deleting Simple Type.");
+                        Console.WriteLine($"Deleting {nameof(SdsSimpleType)}.");
                         RunInTryCatch(metadataService.DeleteTypeAsync, SimpleTypeId);
 
-                        Console.WriteLine("Deleting Pressure Temperature Type.");
-                        RunInTryCatch(metadataService.DeleteTypeAsync, PressureTemperatureTypeId);
+                        Console.WriteLine($"Deleting {nameof(WeatherDataType)}.");
+                        RunInTryCatch(metadataService.DeleteTypeAsync, WeatherDataTypeId);
                     }
                     #endregion
                 }
@@ -357,16 +441,55 @@ namespace StreamingUpdatesRestApi
             }
         }
 
-        private static IList<SdsSimpleType> GetData()
+        private static IList<SdsSimpleType> GetSimpleData()
         {
             List<SdsSimpleType> data = new ()
             {
-                new SdsSimpleType { Timestamp = DateTime.Now, Value = 10 },
-                new SdsSimpleType { Timestamp = DateTime.Now, Value = 20 },
-                new SdsSimpleType { Timestamp = DateTime.Now, Value = 30 },
+                new SdsSimpleType { Timestamp = DateTime.UtcNow, Value = 10 },
+                new SdsSimpleType { Timestamp = DateTime.UtcNow, Value = 20 },
+                new SdsSimpleType { Timestamp = DateTime.UtcNow, Value = 30 },
             };
 
             return data;
+        }
+
+        private static IList<WeatherDataType> GetWeatherData()
+        {
+            List<WeatherDataType> data = new ()
+            {
+                new WeatherDataType { Timestamp = DateTime.UtcNow, Humidity = 40.0, Temperature = 25.0 },
+                new WeatherDataType { Timestamp = DateTime.UtcNow, Humidity = 40.1, Temperature = 25.1 },
+            };
+
+            return data;
+        }
+
+        private static bool IsSdsSimpleType(Update update)
+        {
+            string id = update.ResourceId ?? string.Empty;
+            return id.StartsWith(SimpleStreamPrefix, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void ProcessSimpleStreamUpdate(Update update)
+        {
+            Console.WriteLine($"id: {update.ResourceId}");
+            Console.WriteLine($"operation: {update.Operation}");
+            foreach (JsonElement jsonDataEvent in update.Events)
+            {
+                SdsSimpleType dataEvent = JsonSerializer.Deserialize<SdsSimpleType>(jsonDataEvent);
+                Console.WriteLine($"\tTimestamp: {dataEvent?.Timestamp}, Value: {dataEvent?.Value}");
+            }
+        }
+
+        private static void ProcessWeatherDataUpdate(Update update)
+        {
+            Console.WriteLine($"id: {update.ResourceId}");
+            Console.WriteLine($"operation: {update.Operation}");
+            foreach (JsonElement jsonDataEvent in update.Events)
+            {
+                WeatherDataType dataEvent = JsonSerializer.Deserialize<WeatherDataType>(jsonDataEvent);
+                Console.WriteLine($"\tTimestamp: {dataEvent?.Timestamp}, Humidity: {dataEvent?.Humidity}, Temperature: {dataEvent?.Temperature}");
+            }
         }
     }
 }

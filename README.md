@@ -18,8 +18,8 @@ The sample code in this repository demonstrates REST API calls to ADH for creati
 
 The sample will perform the following procedures:
 1. Obtain an OAuth token for ADH using a client-credentials client
-1. Create a simple SDS Type
-1. Create a SDS Stream
+1. Create SDS Types
+1. Create SDS Streams
 1. Create an ADH Signup against the created resources (streams)
 1. Make an API request to GetSignup to activate the signup
 1. Make an API request to GetSignupResources to view accessible and inaccessible resources in the signup
@@ -27,6 +27,7 @@ The sample will perform the following procedures:
 1. Make an API request to GetUpdates and ensure that data updates are received
 1. Create a new SDS Stream and make an API request to UpdateSignupResources to include the new stream
 1. Make an API request to GetSignupResources to view signup with updated resources
+1. Make an API request to GetUpdates using the bookmark from the previous GetUpdates response
 1. Cleanup signup, streams, and type
 
 NOTE: Communication with SDS will be done via the .NET OCS Clients Library. Communication with Streaming Updates will be done using Http.
@@ -47,7 +48,7 @@ AVEVA Data Hub is secured by obtaining tokens from its identity endpoint. Client
 }
 ```
 
-Within the sample, there are configurable options for number of streams to create, number of streams to update, and the signup name.
+Within the sample, there are configurable options for number of streams to create and the signup name.
 
 ## Running the sample
 
@@ -74,5 +75,5 @@ dotnet test
 
 Tested against DotNet 6.0.  
 For the ADH Streaming Updates samples page [ReadMe]()  
-For the main ADH samples page [ReadMe](https://github.com/osisoft/OSI-Samples-OCS)  
-For the main AVEVA samples page [ReadMe](https://github.com/osisoft/OSI-Samples)
+For the main ADH samples page [ReadMe](https://github.com/AVEVA/AVEVA-Samples-CloudOperations)  
+For the main AVEVA samples page [ReadMe](https://github.com/AVEVA/AVEVA-Samples)
