@@ -6,6 +6,6 @@ namespace StreamingUpdatesRestApi
     {
         public string Bookmark { get; set; }
         
-        public IEnumerable<JsonElement> Data { get; set; }
+        public IEnumerable<Update> Data { get; set; }
     }
 }
