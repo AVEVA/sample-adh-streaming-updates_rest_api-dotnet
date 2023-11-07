@@ -16,7 +16,6 @@ namespace StreamingUpdatesRestApi
         private const string WeatherDataStreamPrefix = "weatherDataStream_";
 
         // Get Updates properties
-        private const string Bookmark = "bookmark";
         private const string Data = "data";
         private const string Events = "events";
         private const string Operation = "operation";
@@ -249,16 +248,12 @@ namespace StreamingUpdatesRestApi
 
                     response = await httpClient.GetAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/updates?bookmark={bookmark}", UriKind.Absolute)).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
-                    
-                    using JsonDocument jsonDocument = JsonSerializer.Deserialize<JsonDocument>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), _dataJsonOptions) !;
-                    JsonElement rootElement = jsonDocument.RootElement;
 
-                    string nextBookmark = rootElement.GetProperty(Bookmark).GetString();
-                    var updates = rootElement.GetProperty(Data).EnumerateArray();
+                    DataUpdate dataUpdate = JsonSerializer.Deserialize<DataUpdate>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), _dataJsonOptions) !;
 
                     // Note:The sequence in which update operations, (e.g. resourceId: Stream A, operation: Insert, events: [...]) are returned may differ from
                     // the order in which they are written. The order of data events within a stream, (e.g. Timestamp 12:00:00, Value: 23) is preserved.
-                    foreach (JsonElement update in updates)
+                    foreach (JsonElement update in dataUpdate.Data)
                     {
                         if (IsSdsSimpleType(update))
                         {
@@ -319,15 +314,20 @@ namespace StreamingUpdatesRestApi
                         }
                     }
 
+                    // Step 11
+                    // Populate streams using non-Insert operations
+                    Console.WriteLine("Step 11: Populate streams with Replace, Update, Remove and RemoveWindow operations");
+
                     Console.WriteLine();
                     #endregion
 
-                    // Step 11
-                    // Make a new API request to GetUpdates using the bookmark obtained from the previous GetUpdates response.
-                    #region Step11
+                    // Step 12
+                    // Make a new API request to GetUpdates using the bookmark obtained from the previous GetUpdates response to
+                    // demonstrate update retrieval  other operation types (for example, Replace, Update, Remove and RemoveWindow).
+                    #region Step12
                     Console.WriteLine("Step 11: Get Updates");
 
-                    response = await httpClient.GetAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/updates?bookmark={nextBookmark}", UriKind.Absolute)).ConfigureAwait(false);
+                    response = await httpClient.GetAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/updates?bookmark={dataUpdate.Bookmark}", UriKind.Absolute)).ConfigureAwait(false);
 
                     CheckIfResponseWasSuccessful(response);
 
