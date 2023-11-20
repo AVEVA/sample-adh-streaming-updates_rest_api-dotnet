@@ -73,6 +73,7 @@ namespace StreamingUpdatesRestApi
             const int GetAllSignupsSkip = 0;
             const int GetAllSignupsCount = AdditionalSignupsToCreate + 1; // includes initial signup created.
 
+            // === Lists ===
             List<string> simpleStreamIdList = new List<string>();
             List<string> weatherDataStreamIdList = new List<string>();
             List<string> signupIds = new List<string>();
@@ -326,7 +327,7 @@ namespace StreamingUpdatesRestApi
                     #endregion
 
                     // Step 11
-                    // Populate streams using non-Insert operations
+                    // Update streams using non-Insert operations
                     #region Step11
                     Console.WriteLine("Step 11: Writing update, replace, remove and remove window operations to the streams");
 
@@ -351,7 +352,7 @@ namespace StreamingUpdatesRestApi
 
                     // Step 12
                     // Make a new API request to GetUpdates using the bookmark obtained from the previous GetUpdates response to
-                    // demonstrate update retrieval  other operation types (for example, Replace, Update, Remove and RemoveWindow).
+                    // demonstrate update retrieval of other operation types (for example, Replace, Update, Remove and RemoveWindow).
                     #region Step12
                     Console.WriteLine("Step 12: Get Updates");
 
@@ -381,7 +382,7 @@ namespace StreamingUpdatesRestApi
                     #endregion
 
                     // Step 13
-                    // Make an API request to Get All Signups with query parameters to view all signups
+                    // Create additional signups and make an API request to GetAllSignups with query parameters to view all signups
                     #region Step13
                     Console.WriteLine("Step 13: Get All Signups");
 
@@ -430,7 +431,7 @@ namespace StreamingUpdatesRestApi
                 finally
                 {
                     // Step 14
-                    // Cleanup Resources
+                    // Cleanup signups, streams, and type
                     #region Step14
                     Console.WriteLine("Step 14: Cleaning Up");
 

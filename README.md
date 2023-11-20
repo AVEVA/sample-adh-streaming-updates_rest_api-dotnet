@@ -27,8 +27,9 @@ The sample will perform the following procedures:
 1. Make an API request to GetUpdates and ensure that data updates are received
 1. Create a new SDS Stream and make an API request to UpdateSignupResources to include the new stream
 1. Make an API request to GetSignupResources using query parameters to view signup with updated resources
-1. Make an API request to GetUpdates using the bookmark from the previous GetUpdates response
-1. Create additional signups that are in an acitvating state and make an API request to GetAllSignups with skip and count query parameters
+1. Update streams using non-Insert operations
+1. Make an API request to GetUpdates using the bookmark from the previous GetUpdates response to demonstrate update retrieval of other operation types (for example, Replace, Update, Remove and RemoveWindow).
+1. Create additional signups and make an API request to GetAllSignups with query parameters to view all signups
 1. Cleanup signups, streams, and type
 
 NOTE: Communication with SDS will be done via the .NET OCS Clients Library. Communication with Streaming Updates will be done using Http.
