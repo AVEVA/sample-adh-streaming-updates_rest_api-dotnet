@@ -65,13 +65,13 @@ namespace StreamingUpdatesRestApi
 
             // === Change these values to modify the query parameters for get signup resources ===
             const int GetSignupResourcesSkip = 0;
-            const int GetSignupResourcesCount = SimpleStreamsToCreate + WeatherDataStreamsToCreate;
+            const int GetSignupResourcesCount = SimpleStreamsToCreate + WeatherDataStreamsToCreate + 1; // Includes new stream to be created in Step 9.
             const SignupResourceFilter GetSignupsResourcesFilter = SignupResourceFilter.All;
 
             // === Change these values to modify the query parameters for get all signups ===
             const int AdditionalSignupsToCreate = 2;
             const int GetAllSignupsSkip = 0;
-            const int GetAllSignupsCount = AdditionalSignupsToCreate + 1; // includes initial signup created.
+            const int GetAllSignupsCount = AdditionalSignupsToCreate + 1; // Includes initial signup created in Step 4.
 
             // === Lists ===
             List<string> simpleStreamIdList = new List<string>();
@@ -387,7 +387,6 @@ namespace StreamingUpdatesRestApi
                     Console.WriteLine("Step 13: Get All Signups");
 
                     // Create additional signups
-                    Console.WriteLine("Create Additional Signups to show in Get All Signups Call");
                     for (int i = 0; i < AdditionalSignupsToCreate; i++)
                     {
                         // The signup does not need to be active to view in Get All Signups. 
@@ -404,7 +403,6 @@ namespace StreamingUpdatesRestApi
                         CheckIfResponseWasSuccessful(response);
                     }
 
-                    Console.WriteLine("Make an API request to Get All Signups.");
                     response = await httpClient.GetAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups?skip={GetAllSignupsSkip}&count={GetAllSignupsCount}", UriKind.Absolute)).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
 
