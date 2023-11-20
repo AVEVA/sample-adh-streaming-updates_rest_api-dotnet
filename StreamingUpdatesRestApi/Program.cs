@@ -63,8 +63,19 @@ namespace StreamingUpdatesRestApi
             const int SimpleStreamsToCreate = 2;
             const int WeatherDataStreamsToCreate = 1;
 
+            // === Change these values to modify the query parameters for get signup resources ===
+            const int GetSignupResourcesSkip = 0;
+            const int GetSignupResourcesCount = SimpleStreamsToCreate + WeatherDataStreamsToCreate;
+            const SignupResourceFilter GetSignupsResourcesFilter = SignupResourceFilter.All;
+
+            // === Change these values to modify the query parameters for get all signups ===
+            const int AdditionalSignupsToCreate = 2;
+            const int GetAllSignupsSkip = 0;
+            const int GetAllSignupsCount = AdditionalSignupsToCreate + 1; // includes initial signup created.
+
             List<string> simpleStreamIdList = new List<string>();
             List<string> weatherDataStreamIdList = new List<string>();
+            List<string> signupIds = new List<string>();
             #endregion
 
             // Step 1
@@ -164,6 +175,7 @@ namespace StreamingUpdatesRestApi
                     // Get Signup Id from HttpResponse
                     Signup signup = JsonSerializer.Deserialize<Signup>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), _apiJsonOptions);
                     signupId = signup?.Id;
+                    signupIds.Add(signupId);
                     Console.WriteLine($"Signup {signupId} has been created and is {signup?.SignupState}");
 
                     Console.WriteLine();
@@ -294,10 +306,10 @@ namespace StreamingUpdatesRestApi
                     #endregion
 
                     // Step 10
-                    // Make an API request to GetSignupResources to view signup with updated resources
+                    // Make an API request to GetSignupResources with query parameters to view signup with updated resources
                     #region Step10
                     Console.WriteLine("Step 10: Get Signup Resources");
-                    response = await httpClient.GetAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/resources", UriKind.Absolute)).ConfigureAwait(false);
+                    response = await httpClient.GetAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/resources?skip={GetSignupResourcesSkip}&count={GetSignupResourcesCount}&resourceFilter={GetSignupsResourcesFilter}", UriKind.Absolute)).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
                     
                     signupResources = JsonSerializer.Deserialize<SignupResources>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), _apiJsonOptions);
@@ -367,6 +379,47 @@ namespace StreamingUpdatesRestApi
 
                     Console.WriteLine();
                     #endregion
+
+                    // Step 13
+                    // Make an API request to Get All Signups with query parameters to view all signups
+                    #region Step13
+                    Console.WriteLine("Step 13: Get All Signups");
+
+                    // Create additional signups
+                    Console.WriteLine("Create Additional Signups to show in Get All Signups Call");
+                    for (int i = 0; i < AdditionalSignupsToCreate; i++)
+                    {
+                        // The signup does not need to be active to view in Get All Signups. 
+                        CreateSignupInput additionalSignupToCreate = new CreateSignupInput()
+                        {
+                            Name = $"{SignupName}_{i}",
+                            ResourceType = ResourceType.Stream,
+                            ResourceIds = streamsToAdd,
+                        };
+
+                        using StringContent additionalSignupToCreateString = new (JsonSerializer.Serialize(additionalSignupToCreate));
+                        additionalSignupToCreateString.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                        response = await httpClient.PostAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups", UriKind.Absolute), additionalSignupToCreateString).ConfigureAwait(false);
+                        CheckIfResponseWasSuccessful(response);
+                    }
+
+                    Console.WriteLine("Make an API request to Get All Signups.");
+                    response = await httpClient.GetAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups?skip={GetAllSignupsSkip}&count={GetAllSignupsCount}", UriKind.Absolute)).ConfigureAwait(false);
+                    CheckIfResponseWasSuccessful(response);
+
+                    SignupsWrapper signupsWrapper = JsonSerializer.Deserialize<SignupsWrapper>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), _apiJsonOptions);
+
+                    if (signupsWrapper!.Signups.Any())
+                    {
+                        foreach (var signupReturned in signupsWrapper.Signups)
+                        {
+                            if (signupReturned.Id != signupId) signupIds.Add(signupReturned.Id);
+                            Console.WriteLine($"Signup: {signupReturned.Name}, Id: {signupReturned.Id}");
+                        }
+                    }
+
+                    Console.WriteLine();
+                    #endregion
                 }
                 catch (Exception ex)
                 {
@@ -376,13 +429,16 @@ namespace StreamingUpdatesRestApi
                 }
                 finally
                 {
-                    // Step 13
+                    // Step 14
                     // Cleanup Resources
-                    #region Step13
-                    Console.WriteLine("Step 13: Cleaning Up");
+                    #region Step14
+                    Console.WriteLine("Step 14: Cleaning Up");
 
-                    Console.WriteLine($"Deleting ADH Signup with id {signupId}");
-                    RunInTryCatch(httpClient.DeleteAsync, $"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}");
+                    foreach (var id in signupIds)
+                    {
+                        Console.WriteLine($"Deleting ADH Signup with id {id}");
+                        RunInTryCatch(httpClient.DeleteAsync, $"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{id}");
+                    }
 
                     if (metadataService != null)
                     {

@@ -26,9 +26,10 @@ The sample will perform the following procedures:
 1. Make updates to the Streams (post data to stream)
 1. Make an API request to GetUpdates and ensure that data updates are received
 1. Create a new SDS Stream and make an API request to UpdateSignupResources to include the new stream
-1. Make an API request to GetSignupResources to view signup with updated resources
+1. Make an API request to GetSignupResources using query parameters to view signup with updated resources
 1. Make an API request to GetUpdates using the bookmark from the previous GetUpdates response
-1. Cleanup signup, streams, and type
+1. Create additional signups that are in an acitvating state and make an API request to GetAllSignups with skip and count query parameters
+1. Cleanup signups, streams, and type
 
 NOTE: Communication with SDS will be done via the .NET OCS Clients Library. Communication with Streaming Updates will be done using Http.
 
@@ -48,7 +49,7 @@ AVEVA Data Hub is secured by obtaining tokens from its identity endpoint. Client
 }
 ```
 
-Within the sample, there are configurable options for number of streams to create and the signup name.
+Within the sample, there are configurable options for number of streams to create, the signup name, query parameters, and number of additional signups to create.
 
 ## Running the sample
 
