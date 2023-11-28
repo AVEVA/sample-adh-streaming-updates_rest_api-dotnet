@@ -1,6 +1,6 @@
 ﻿namespace StreamingUpdatesRestApi
 {
-    public class SignupsWrapper
+    public class SignupCollection
     {
         public IEnumerable<Signup> Signups { get; set; } = Enumerable.Empty<Signup>();
     }

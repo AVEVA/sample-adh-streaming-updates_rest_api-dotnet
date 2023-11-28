@@ -406,15 +406,12 @@ namespace StreamingUpdatesRestApi
                     response = await httpClient.GetAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups?skip={GetAllSignupsSkip}&count={GetAllSignupsCount}", UriKind.Absolute)).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
 
-                    SignupsWrapper signupsWrapper = JsonSerializer.Deserialize<SignupsWrapper>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), _apiJsonOptions);
+                    SignupCollection signups = JsonSerializer.Deserialize<SignupCollection>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), _apiJsonOptions);
 
-                    if (signupsWrapper!.Signups.Any())
+                    foreach (var signupReturned in signups!.Signups)
                     {
-                        foreach (var signupReturned in signupsWrapper.Signups)
-                        {
-                            if (signupReturned.Id != signupId) signupIds.Add(signupReturned.Id);
-                            Console.WriteLine($"Signup: {signupReturned.Name}, Id: {signupReturned.Id}");
-                        }
+                        if (signupReturned.Id != signupId) signupIds.Add(signupReturned.Id);
+                        Console.WriteLine($"Signup: {signupReturned.Name}, Id: {signupReturned.Id}");
                     }
 
                     Console.WriteLine();
