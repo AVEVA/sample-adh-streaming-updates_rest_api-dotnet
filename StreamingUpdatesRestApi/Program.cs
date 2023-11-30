@@ -286,8 +286,8 @@ namespace StreamingUpdatesRestApi
                     {
                         SdsStream newSdsStream = new SdsStream()
                         {
-                            Id = WeatherDataStreamPrefix + "New",
-                            Name = WeatherDataStreamPrefix + "New",
+                            Id = WeatherDataStreamPrefix + "New_" + i,
+                            Name = WeatherDataStreamPrefix + "New_" + i,
                             TypeId = WeatherDataTypeId,
                             Description = $"New Weather Data Stream for ADH Streaming Updates",
                         };
