@@ -62,10 +62,11 @@ namespace StreamingUpdatesRestApi
             // === Change these values to modify the number of streams to create ===
             const int SimpleStreamsToCreate = 2;
             const int WeatherDataStreamsToCreate = 1;
+            const int AdditionalWeatherDataStreamsToCreate = 1;
 
             // === Change these values to modify the query parameters for get signup resources ===
             const int GetSignupResourcesSkip = 0;
-            const int GetSignupResourcesCount = SimpleStreamsToCreate + WeatherDataStreamsToCreate + 1; // Includes new stream to be created in Step 9.
+            const int GetSignupResourcesCount = SimpleStreamsToCreate + WeatherDataStreamsToCreate + AdditionalWeatherDataStreamsToCreate;
             const SignupResourceFilter GetSignupsResourcesFilter = SignupResourceFilter.All;
 
             // === Change these values to modify the query parameters for get all signups ===
@@ -275,27 +276,30 @@ namespace StreamingUpdatesRestApi
 
                         Console.WriteLine();
                     }
-                    
+
                     #endregion
 
                     // Step 9
                     // Create a new SDS Stream and make an API Request to UpdateSignupResources to add the stream to signup
                     #region Step9
-                    SdsStream newSdsStream = new SdsStream()
+                    for (int i = 0; i < AdditionalWeatherDataStreamsToCreate; i++)
                     {
-                        Id = WeatherDataStreamPrefix + "New",
-                        Name = WeatherDataStreamPrefix + "New",
-                        TypeId = WeatherDataTypeId,
-                        Description = $"New Weather Data Stream for ADH Streaming Updates",
-                    };
+                        SdsStream newSdsStream = new SdsStream()
+                        {
+                            Id = WeatherDataStreamPrefix + "New",
+                            Name = WeatherDataStreamPrefix + "New",
+                            TypeId = WeatherDataTypeId,
+                            Description = $"New Weather Data Stream for ADH Streaming Updates",
+                        };
 
-                    newSdsStream = await metadataService.GetOrCreateStreamAsync(newSdsStream).ConfigureAwait(false);
-                    weatherDataStreamIdList.Add(newSdsStream.Id);
+                        newSdsStream = await metadataService.GetOrCreateStreamAsync(newSdsStream).ConfigureAwait(false);
+                        weatherDataStreamIdList.Add(newSdsStream.Id);
+                    }
 
                     Console.WriteLine("Step 9: Updating Signup Resources with a new Weather Data Stream");
                     SignupResourcesInput signupToUpdate = new SignupResourcesInput()
                     {
-                        ResourcesToAdd = new List<string>() { newSdsStream.Id },
+                        ResourcesToAdd = weatherDataStreamIdList,
                         ResourcesToRemove = new List<string>() { },
                     };
 
@@ -303,7 +307,7 @@ namespace StreamingUpdatesRestApi
                     signupToUpdateString.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                     response = await httpClient.PostAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{signupId}/resources", UriKind.Absolute), signupToUpdateString).ConfigureAwait(false);
                     CheckIfResponseWasSuccessful(response);
-                    Console.WriteLine();
+                    Console.WriteLine();    
                     #endregion
 
                     // Step 10
@@ -410,7 +414,7 @@ namespace StreamingUpdatesRestApi
 
                     foreach (var signupReturned in signups!.Signups)
                     {
-                        if (signupReturned.Id != signupId) signupIds.Add(signupReturned.Id);
+                        signupIds.Add(signupReturned.Id);
                         Console.WriteLine($"Signup: {signupReturned.Name}, Id: {signupReturned.Id}");
                     }
 
@@ -430,7 +434,7 @@ namespace StreamingUpdatesRestApi
                     #region Step14
                     Console.WriteLine("Step 14: Cleaning Up");
 
-                    foreach (var id in signupIds)
+                    foreach (var id in signupIds.Distinct())
                     {
                         Console.WriteLine($"Deleting ADH Signup with id {id}");
                         RunInTryCatch(httpClient.DeleteAsync, $"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{id}");

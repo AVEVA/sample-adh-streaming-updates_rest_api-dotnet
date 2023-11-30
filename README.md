@@ -50,7 +50,7 @@ AVEVA Data Hub is secured by obtaining tokens from its identity endpoint. Client
 }
 ```
 
-Within the sample, there are configurable options for number of streams to create, the signup name, query parameters, and number of additional signups to create.
+Within the sample, there are configurable options for number of streams to create, the signup name, query parameters, and number of additional signups to create. Please note: the maximum value for the count query parameter is 1,000 for get all signups and 10,000 for get signup resources.
 
 ## Running the sample
 
