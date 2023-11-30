@@ -405,6 +405,9 @@ namespace StreamingUpdatesRestApi
                         additionalSignupToCreateString.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                         response = await httpClient.PostAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups", UriKind.Absolute), additionalSignupToCreateString).ConfigureAwait(false);
                         CheckIfResponseWasSuccessful(response);
+
+                        Signup additionalSignup = JsonSerializer.Deserialize<Signup>(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), _apiJsonOptions);
+                        signupIds.Add(additionalSignup?.Id);
                     }
 
                     response = await httpClient.GetAsync(new Uri($"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups?skip={GetAllSignupsSkip}&count={GetAllSignupsCount}", UriKind.Absolute)).ConfigureAwait(false);
@@ -414,7 +417,6 @@ namespace StreamingUpdatesRestApi
 
                     foreach (var signupReturned in signups!.Signups)
                     {
-                        signupIds.Add(signupReturned.Id);
                         Console.WriteLine($"Signup: {signupReturned.Name}, Id: {signupReturned.Id}");
                     }
 
@@ -434,7 +436,7 @@ namespace StreamingUpdatesRestApi
                     #region Step14
                     Console.WriteLine("Step 14: Cleaning Up");
 
-                    foreach (var id in signupIds.Distinct())
+                    foreach (var id in signupIds)
                     {
                         Console.WriteLine($"Deleting ADH Signup with id {id}");
                         RunInTryCatch(httpClient.DeleteAsync, $"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{id}");
