@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace StreamingUpdatesRestApi
+namespace ChangeBrokerRestApi
 {
     /// <summary>
     /// Filter to be applied to Signup Resources.

@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace StreamingUpdatesRestApi
+namespace ChangeBrokerRestApi
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum SignupState

@@ -5,9 +5,8 @@ using Microsoft.Extensions.Configuration;
 using OSIsoft.Data;
 using OSIsoft.Data.Reflection;
 using OSIsoft.Identity;
-using static System.Text.Json.JsonElement;
 
-namespace StreamingUpdatesRestApi
+namespace ChangeBrokerRestApi
 {
     public static class Program
     {
@@ -24,7 +23,7 @@ namespace StreamingUpdatesRestApi
 
         public static void Main()
         {
-            Console.WriteLine("Beginning sample DotNet application for AVEVA DataHub StreamingUpdates");
+            Console.WriteLine("Beginning sample DotNet application for AVEVA DataHub Change Broker");
             MainAsync().GetAwaiter().GetResult();
         }
 

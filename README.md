@@ -1,4 +1,4 @@
-# AVEVA Data Hub StreamingUpdates Service .NET REST API Sample
+# AVEVA Data Hub Change Broker Service .NET REST API Sample
 
 [![Build Status](https://dev.azure.com/osieng/engineering/_apis/build/status%2Fproduct-readiness%2FADH%2Fosisoft.sample-adh-streaming-updates_rest_api-dotnet?repoName=osisoft%2Fsample-adh-streaming-updates_rest_api-dotnet&branchName=main)](https://dev.azure.com/osieng/engineering/_build/latest?definitionId=5624&repoName=osisoft%2Fsample-adh-streaming-updates_rest_api-dotnet&branchName=main)
 
@@ -57,7 +57,7 @@ Within the sample, there are configurable options for number of streams to creat
 To run this example from the command line once the `appsettings.json` is configured, run
 
 ```shell
-cd StreamingUpdatesRestApi
+cd ChangeBrokerRestApi
 dotnet restore
 dotnet run
 ```
@@ -68,7 +68,7 @@ dotnet run
 To test the sample, run
 
 ```shell
-cd StreamingUpdatesRestApiTest
+cd ChangeBrokerRestApiTest
 dotnet restore
 dotnet test
 ```

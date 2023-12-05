@@ -1,6 +1,6 @@
 ﻿using OSIsoft.Data;
 
-namespace StreamingUpdatesRestApi
+namespace ChangeBrokerRestApi
 {
     public class WeatherDataType
     {

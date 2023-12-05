@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace StreamingUpdatesRestApi
+namespace ChangeBrokerRestApi
 {
     public class Update
     {
