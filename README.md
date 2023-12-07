@@ -76,6 +76,6 @@ dotnet test
 ---
 
 Tested against DotNet 6.0.  
-For the ADH Streaming Updates samples page [ReadMe]()  
+For the ADH Change Broker samples page [ReadMe]()  
 For the main ADH samples page [ReadMe](https://github.com/AVEVA/AVEVA-Samples-CloudOperations)  
 For the main AVEVA samples page [ReadMe](https://github.com/AVEVA/AVEVA-Samples)
