@@ -32,7 +32,7 @@ The sample will perform the following procedures:
 1. Create additional signups and make an API request to GetAllSignups with query parameters to view all signups
 1. Cleanup signups, streams, and type
 
-NOTE: Communication with SDS will be done via the .NET OCS Clients Library. Communication with Streaming Updates will be done using Http.
+NOTE: Communication with SDS will be done via the .NET OCS Clients Library. Communication with Change Broker will be done using Http.
 
 ## Configuring the sample
 
