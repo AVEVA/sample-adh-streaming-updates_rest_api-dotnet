@@ -5,9 +5,8 @@ using Microsoft.Extensions.Configuration;
 using OSIsoft.Data;
 using OSIsoft.Data.Reflection;
 using OSIsoft.Identity;
-using static System.Text.Json.JsonElement;
 
-namespace StreamingUpdatesRestApi
+namespace ChangeBrokerRestApi
 {
     public static class Program
     {
@@ -24,14 +23,14 @@ namespace StreamingUpdatesRestApi
 
         public static void Main()
         {
-            Console.WriteLine("Beginning sample DotNet application for AVEVA DataHub StreamingUpdates");
+            Console.WriteLine("Beginning sample DotNet application for AVEVA DataHub Change Broker");
             MainAsync().GetAwaiter().GetResult();
         }
 
         public static async Task<bool> MainAsync(bool test = false)
         {
             #region Setup
-            // streaming updates API serialization options
+            // Change Broker API serialization options
             _apiJsonOptions = new JsonSerializerOptions() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
             _apiJsonOptions.Converters.Add(new JsonStringEnumConverter());
 
@@ -128,7 +127,7 @@ namespace StreamingUpdatesRestApi
                             Id = SimpleStreamPrefix + i,
                             Name = SimpleStreamPrefix + i,
                             TypeId = SimpleTypeId,
-                            Description = $"Simple Stream for ADH Streaming Updates",
+                            Description = $"Simple Stream for ADH Change Broker",
                         };
 
                         sdsStream = await metadataService.GetOrCreateStreamAsync(sdsStream).ConfigureAwait(false);
@@ -145,7 +144,7 @@ namespace StreamingUpdatesRestApi
                             Id = WeatherDataStreamPrefix + i,
                             Name = WeatherDataStreamPrefix + i,
                             TypeId = WeatherDataTypeId,
-                            Description = "Weather Data Stream for ADH Streaming Updates",
+                            Description = "Weather Data Stream for ADH Change Broker",
                         };
 
                         weatherDataStream = await metadataService.GetOrCreateStreamAsync(weatherDataStream).ConfigureAwait(false);
@@ -157,7 +156,7 @@ namespace StreamingUpdatesRestApi
                     Console.WriteLine();
                     #endregion
 
-                    // STREAMING UPDATES:
+                    // CHANGE BROKER:
                     // Step 4
                     // Create an ADH Signup against the created resources (streams)
                     #region Step4
@@ -289,7 +288,7 @@ namespace StreamingUpdatesRestApi
                             Id = WeatherDataStreamPrefix + "New_" + i,
                             Name = WeatherDataStreamPrefix + "New_" + i,
                             TypeId = WeatherDataTypeId,
-                            Description = $"New Weather Data Stream for ADH Streaming Updates",
+                            Description = $"New Weather Data Stream for ADH Change Broker",
                         };
 
                         newSdsStream = await metadataService.GetOrCreateStreamAsync(newSdsStream).ConfigureAwait(false);

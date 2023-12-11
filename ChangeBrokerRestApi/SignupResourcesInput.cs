@@ -1,4 +1,4 @@
-﻿namespace StreamingUpdatesRestApi
+﻿namespace ChangeBrokerRestApi
 {
     public class SignupResourcesInput
     {

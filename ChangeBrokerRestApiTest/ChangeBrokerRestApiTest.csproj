@@ -23,6 +23,6 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\StreamingUpdatesRestApi\StreamingUpdatesRestApi.csproj" />
+		<ProjectReference Include="..\ChangeBrokerRestApi\ChangeBrokerRestApi.csproj" />
 	</ItemGroup>
 </Project>

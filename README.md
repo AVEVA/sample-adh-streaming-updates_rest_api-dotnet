@@ -1,8 +1,8 @@
-# AVEVA Data Hub StreamingUpdates Service .NET REST API Sample
+# AVEVA Data Hub Change Broker Service .NET REST API Sample
 
 [![Build Status](https://dev.azure.com/osieng/engineering/_apis/build/status%2Fproduct-readiness%2FADH%2Fosisoft.sample-adh-streaming-updates_rest_api-dotnet?repoName=osisoft%2Fsample-adh-streaming-updates_rest_api-dotnet&branchName=main)](https://dev.azure.com/osieng/engineering/_build/latest?definitionId=5624&repoName=osisoft%2Fsample-adh-streaming-updates_rest_api-dotnet&branchName=main)
 
-## Version 1.0.2
+## Version 1.0.3
 Developed against DotNet 6.0
 
 ## Requirements
@@ -32,7 +32,7 @@ The sample will perform the following procedures:
 1. Create additional signups and make an API request to GetAllSignups with query parameters to view all signups
 1. Cleanup signups, streams, and type
 
-NOTE: Communication with SDS will be done via the .NET OCS Clients Library. Communication with Streaming Updates will be done using Http.
+NOTE: Communication with SDS will be done via the .NET OCS Clients Library. Communication with Change Broker will be done using Http.
 
 ## Configuring the sample
 
@@ -57,7 +57,7 @@ Within the sample, there are configurable options for number of streams to creat
 To run this example from the command line once the `appsettings.json` is configured, run
 
 ```shell
-cd StreamingUpdatesRestApi
+cd ChangeBrokerRestApi
 dotnet restore
 dotnet run
 ```
@@ -68,7 +68,7 @@ dotnet run
 To test the sample, run
 
 ```shell
-cd StreamingUpdatesRestApiTest
+cd ChangeBrokerRestApiTest
 dotnet restore
 dotnet test
 ```
@@ -76,6 +76,6 @@ dotnet test
 ---
 
 Tested against DotNet 6.0.  
-For the ADH Streaming Updates samples page [ReadMe]()  
+For the ADH Change Broker samples page [ReadMe]()  
 For the main ADH samples page [ReadMe](https://github.com/AVEVA/AVEVA-Samples-CloudOperations)  
 For the main AVEVA samples page [ReadMe](https://github.com/AVEVA/AVEVA-Samples)
