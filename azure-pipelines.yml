@@ -31,7 +31,7 @@ resources:
 variables:
   - template: '/miscellaneous/build_templates/variables.yml@templates'
   - name: analysisProject
-    value: sample-adh-change-broker_rest_api-dotnet
+    value: sample-adh-change_broker_rest_api-dotnet
 
 parameters:
   - name: pool
