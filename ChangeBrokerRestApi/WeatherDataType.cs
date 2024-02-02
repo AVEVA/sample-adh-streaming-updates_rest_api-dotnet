@@ -1,13 +1,13 @@
 ﻿using OSIsoft.Data;
 
-namespace StreamingUpdatesRestApi
+namespace ChangeBrokerRestApi
 {
-    public class PressureTemperatureData
+    public class WeatherDataType
     {
         [SdsMember(IsKey = true)]
         public DateTime Timestamp { get; set; }
 
-        public double Pressure { get; set; }
+        public double Humidity { get; set; }
         public double Temperature { get; set; }
     }
 }

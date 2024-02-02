@@ -1,4 +1,4 @@
-﻿namespace StreamingUpdatesRestApi
+﻿namespace ChangeBrokerRestApi
 {
     [Serializable]
     public class Signup

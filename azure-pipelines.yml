@@ -30,7 +30,7 @@ resources:
 
 variables:
   - name: analysisProject
-    value: sample-adh-streaming-updates_rest_api-dotnet
+    value: sample-adh-change_broker_rest_api-dotnet
 
 parameters:
   - name: pool
