@@ -1,5 +1,9 @@
 # Version History
 
+## 1.0.4 / 2024-2-2
+
+- Migrate Pipelines
+
 ## 1.0.3 / 2023-12-11
 
 - Change sample name from Streaming Updates to Change Broker
