@@ -80,7 +80,7 @@ namespace ChangeBrokerRestApi
             #endregion
 
             // Step 1
-            // Obtain authentication handler for ADH using Client-credential clients
+            // Obtain authentication handler for Cds using Client-credential clients
             // Create SDS communication services
             #region Step1
             Console.WriteLine("Step 1: Obtain authentication handler and create Sds communication services");
@@ -127,7 +127,7 @@ namespace ChangeBrokerRestApi
                             Id = SimpleStreamPrefix + i,
                             Name = SimpleStreamPrefix + i,
                             TypeId = SimpleTypeId,
-                            Description = $"Simple Stream for ADH Change Broker",
+                            Description = $"Simple Stream for Cds Change Broker",
                         };
 
                         sdsStream = await metadataService.GetOrCreateStreamAsync(sdsStream).ConfigureAwait(false);
@@ -144,7 +144,7 @@ namespace ChangeBrokerRestApi
                             Id = WeatherDataStreamPrefix + i,
                             Name = WeatherDataStreamPrefix + i,
                             TypeId = WeatherDataTypeId,
-                            Description = "Weather Data Stream for ADH Change Broker",
+                            Description = "Weather Data Stream for Cds Change Broker",
                         };
 
                         weatherDataStream = await metadataService.GetOrCreateStreamAsync(weatherDataStream).ConfigureAwait(false);
@@ -158,7 +158,7 @@ namespace ChangeBrokerRestApi
 
                     // CHANGE BROKER:
                     // Step 4
-                    // Create an ADH Signup against the created resources (streams)
+                    // Create an Cds Signup against the created resources (streams)
                     #region Step4
                     Console.WriteLine("Step 4: Creating Signup");
                     CreateSignupInput signupToCreate = new CreateSignupInput()
@@ -288,7 +288,7 @@ namespace ChangeBrokerRestApi
                             Id = WeatherDataStreamPrefix + "New_" + i,
                             Name = WeatherDataStreamPrefix + "New_" + i,
                             TypeId = WeatherDataTypeId,
-                            Description = $"New Weather Data Stream for ADH Change Broker",
+                            Description = $"New Weather Data Stream for Cds Change Broker",
                         };
 
                         newSdsStream = await metadataService.GetOrCreateStreamAsync(newSdsStream).ConfigureAwait(false);
@@ -437,7 +437,7 @@ namespace ChangeBrokerRestApi
 
                     foreach (var id in signupIds)
                     {
-                        Console.WriteLine($"Deleting ADH Signup with id {id}");
+                        Console.WriteLine($"Deleting Cds Signup with id {id}");
                         RunInTryCatch(httpClient.DeleteAsync, $"{resource}/api/{apiVersion}/Tenants/{tenantId}/Namespaces/{namespaceId}/signups/{id}");
                     }
 
