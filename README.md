@@ -1,4 +1,4 @@
-# AVEVA Data Hub Change Broker Service .NET REST API Sample
+# CONNECT data services Change Broker Service .NET REST API Sample
 
 [![Build Status](https://dev.azure.com/osieng/engineering/_apis/build/status%2Fproduct-readiness%2FADH%2Fosisoft.sample-adh-streaming-updates_rest_api-dotnet?repoName=osisoft%2Fsample-adh-streaming-updates_rest_api-dotnet&branchName=main)](https://dev.azure.com/osieng/engineering/_build/latest?definitionId=5624&repoName=osisoft%2Fsample-adh-streaming-updates_rest_api-dotnet&branchName=main)
 
@@ -10,18 +10,18 @@ Developed against DotNet 6.0
 The [.NET Core CLI](https://docs.microsoft.com/en-us/dotnet/core/tools/) is referenced in this sample, and should be installed to run the sample from the command line.
 
 ## Definitions
-* ADH: AVEVA DataHub
+* Cds: CONNECT data services
 * SDS: Sequential Data Store
 
 ## About this repository
 
-The sample code in this repository demonstrates REST API calls to ADH for creating a Signup to receive resource updates. Signups allow clients to subscribe resources (for example, streams) and get updates for those resources.
+The sample code in this repository demonstrates REST API calls to Cds for creating a Signup to receive resource updates. Signups allow clients to subscribe resources (for example, streams) and get updates for those resources.
 
 The sample will perform the following procedures:
-1. Obtain an OAuth token for ADH using a client-credentials client
+1. Obtain an OAuth token for Cds using a client-credentials client
 1. Create SDS Types
 1. Create SDS Streams
-1. Create an ADH Signup against the created resources (streams)
+1. Create an Cds Signup against the created resources (streams)
 1. Make an API request to GetSignup to activate the signup
 1. Make an API request to GetSignupResources to view accessible and inaccessible resources in the signup
 1. Make updates to the Streams (post data to stream)
@@ -39,7 +39,7 @@ NOTE: Communication with SDS will be done via the .NET OCS Clients Library. Comm
 
 The sample is configured using the file appsettings.placeholder.json.  Before editing, rename this file to `appsettings.json`. This repository's `.gitignore` rules should prevent the file from ever being checked in to any fork or branch, to ensure credentials are not compromised. 
 
-AVEVA Data Hub is secured by obtaining tokens from its identity endpoint. Client credentials clients provide a client application identifier and an associated secret (or key) that are authenticated against the token endpoint. You must replace the placeholders in your `appsettings.json` file with the authentication-related values from your tenant and a client-credentials client created in your ADH tenant.
+CONNECT data services is secured by obtaining tokens from its identity endpoint. Client credentials clients provide a client application identifier and an associated secret (or key) that are authenticated against the token endpoint. You must replace the placeholders in your `appsettings.json` file with the authentication-related values from your tenant and a client-credentials client created in your Cds tenant.
 
 ```json
 {
@@ -77,6 +77,6 @@ dotnet test
 ---
 
 Tested against DotNet 6.0.  
-For the ADH Change Broker samples page [ReadMe]()  
-For the main ADH samples page [ReadMe](https://github.com/AVEVA/AVEVA-Samples-CloudOperations)  
+For the Cds Change Broker samples page [ReadMe]()  
+For the main Cds samples page [ReadMe](https://github.com/AVEVA/AVEVA-Samples-CloudOperations)  
 For the main AVEVA samples page [ReadMe](https://github.com/AVEVA/AVEVA-Samples)
